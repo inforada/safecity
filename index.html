@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Безпечне Місто Дніпро | Дніпровська міська рада</title>
+    <meta name="description" content="Система ситуаційного відеоспостереження міста Дніпра. Отримайте доступ до відеоархіву безкоштовно.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1e40af;
+            --primary-light: #3b82f6;
+            --secondary: #f59e0b;
+            --background: #f8fafc;
+            --card: #ffffff;
+            --foreground: #0f172a;
+            --muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--background);
+            color: var(--foreground);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            overflow: hidden;
+        }
+
+        .hero-bg {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+        }
+
+        .hero-bg img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .hero-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to right, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.7));
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            text-align: left;
+            padding: 60px 40px;
+            max-width: 700px;
+            margin-left: 5%;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 800;
+            color: white;
+            margin-bottom: 24px;
+            line-height: 1.1;
+        }
+
+        .hero h1 span {
+            color: var(--secondary);
+        }
+
+        .hero p {
+            font-size: 1.125rem;
+            color: rgba(255, 255, 255, 0.85);
+            margin-bottom: 32px;
+            max-width: 600px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            animation: bounce 2s infinite;
+            cursor: pointer;
+        }
+
+        .scroll-indicator svg {
+            width: 32px;
+            height: 32px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateX(-50%) translateY(0);
+            }
+            40% {
+                transform: translateX(-50%) translateY(-10px);
+            }
+            60% {
+                transform: translateX(-50%) translateY(-5px);
+            }
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 28px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--secondary);
+            color: #0f172a;
+        }
+
+        .btn-primary:hover {
+            background: #d97706;
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .stats {
+            padding: 80px 0;
+            margin-top: -40px;
+            position: relative;
+            z-index: 20;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            padding: 32px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            border-color: var(--primary-light);
+        }
+
+        .stat-icon {
+            width: 56px;
+            height: 56px;
+            background: rgba(30, 64, 175, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            transition: background 0.3s ease;
+        }
+
+        .stat-card:hover .stat-icon {
+            background: rgba(30, 64, 175, 0.15);
+        }
+
+        .stat-icon svg {
+            width: 28px;
+            height: 28px;
+            color: var(--primary);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--foreground);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .request-section {
+            padding: 80px 0;
+            background: #f1f5f9;
+        }
+
+        .section-header {
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto 48px;
+        }
+
+        .section-header h2 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+
+        .section-header p {
+            color: var(--muted);
+        }
+
+        .request-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            max-width: 1000px;
+            margin: 0 auto 48px;
+        }
+
+        @media (max-width: 900px) {
+            .request-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .request-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 32px 24px;
+            background: white;
+            border-radius: 16px;
+            text-decoration: none;
+            color: var(--foreground);
+            transition: all 0.3s ease;
+            border: 2px solid var(--border);
+        }
+
+        .request-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        .request-card.telegram:hover {
+            border-color: #229ED9;
+        }
+
+        .request-card.individual:hover {
+            border-color: #3b82f6;
+        }
+
+        .request-card.legal:hover {
+            border-color: #8b5cf6;
+        }
+
+        .request-card-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .request-card:hover .request-card-icon {
+            transform: scale(1.1);
+        }
+
+        .request-card.telegram .request-card-icon {
+            background: #229ED9;
+        }
+
+        .request-card.individual .request-card-icon {
+            background: #3b82f6;
+        }
+
+        .request-card.legal .request-card-icon {
+            background: #8b5cf6;
+        }
+
+        .request-card-icon svg {
+            width: 32px;
+            height: 32px;
+            color: white;
+        }
+
+        .request-card h4 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .request-card p {
+            font-size: 0.9rem;
+            color: var(--muted);
+            margin-bottom: 16px;
+        }
+
+        .request-card .badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .request-card.telegram .badge {
+            background: rgba(34, 158, 217, 0.1);
+            color: #229ED9;
+        }
+
+        .request-card.individual .badge {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+
+        .request-card.legal .badge {
+            background: rgba(139, 92, 246, 0.1);
+            color: #8b5cf6;
+        }
+
+        .info-badges {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .info-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .info-badge.green {
+            background: rgba(34, 197, 94, 0.1);
+            color: #16a34a;
+        }
+
+        .info-badge.blue {
+            background: rgba(59, 130, 246, 0.1);
+            color: #2563eb;
+        }
+
+        .info-badge.amber {
+            background: rgba(245, 158, 11, 0.1);
+            color: #d97706;
+        }
+
+        .info-badge svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .about-section {
+            padding: 80px 0;
+            background: white;
+        }
+
+        .about-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 32px;
+        }
+
+        .about-card {
+            text-align: center;
+            padding: 32px;
+            border-radius: 16px;
+            transition: background 0.2s ease;
+        }
+
+        .about-card:hover {
+            background: var(--background);
+        }
+
+        .about-card-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+
+        .about-card-icon.blue {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+
+        .about-card-icon.yellow {
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+        }
+
+        .about-card-icon.green {
+            background: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+        }
+
+        .about-card-icon svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .about-card h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .about-card p {
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .footer {
+            background: #0f172a;
+            color: white;
+            padding: 64px 0 32px;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 48px;
+            margin-bottom: 48px;
+        }
+
+        @media (max-width: 900px) {
+            .footer-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .footer-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .footer-col h4 {
+            font-weight: 700;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .footer-logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .footer-logo-icon svg {
+            width: 24px;
+            height: 24px;
+            color: white;
+        }
+
+        .footer-logo-text h3 {
+            font-weight: 700;
+            font-size: 1.1rem;
+            line-height: 1.2;
+        }
+
+        .footer-desc {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 12px;
+        }
+
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary-light);
+        }
+
+        .footer-links svg {
+            width: 16px;
+            height: 16px;
+            color: var(--primary-light);
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 32px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <section class="hero">
+        <div class="hero-bg">
+            <img id="hero-bg-image" src="assets/hero-bg.png" alt="Безпечне місто Дніпро">
+            <div class="hero-overlay"></div>
+        </div>
+        <div class="hero-content">
+            <h1 id="hero-title">Безпечне Місто<br><span id="hero-subtitle">Дніпро</span></h1>
+            <p id="hero-description">Комплексна система ситуаційного відеоспостереження, створена для забезпечення безпеки кожного мешканця. Отримайте доступ до відеоархіву безкоштовно.</p>
+            <div class="hero-buttons">
+                <a href="#request" class="btn btn-primary">Запит на відеоархів</a>
+                <a href="#about" class="btn btn-outline">Дізнатися більше</a>
+            </div>
+        </div>
+        <a href="#stats" class="scroll-indicator">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+        </a>
+    </section>
+
+    <section id="stats" class="stats">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
+                        </svg>
+                    </div>
+                    <div class="stat-value" id="stat-cameras">2 886+</div>
+                    <div class="stat-label">Камер встановлено</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                        </svg>
+                    </div>
+                    <div class="stat-value" id="stat-requests">2 400+</div>
+                    <div class="stat-label">Запитів оброблено</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="stat-value" id="stat-storage">30 днів</div>
+                    <div class="stat-label">Термін зберігання</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                        </svg>
+                    </div>
+                    <div class="stat-value" id="stat-monitoring">24/7</div>
+                    <div class="stat-label">Моніторинг</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="request" class="request-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Подати запит на відеоархів</h2>
+                <p>Фізичні та юридичні особи можуть отримати відеозаписи з камер міського спостереження у випадках ДТП, крадіжок або інших інцидентів.</p>
+            </div>
+
+            <div class="request-cards">
+                <a id="link-telegram" href="https://t.me/SaveCityDnipro_bot" target="_blank" rel="noopener noreferrer" class="request-card telegram">
+                    <div class="request-card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                        </svg>
+                    </div>
+                    <h4>Telegram бот</h4>
+                    <p>Найшвидший спосіб подати запит</p>
+                    <span class="badge">Відповідь за 24 год</span>
+                </a>
+
+                <a id="link-individual" href="https://forms.gle/LqgvbhWfQq6xLwfz7" target="_blank" rel="noopener noreferrer" class="request-card individual">
+                    <div class="request-card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                        </svg>
+                    </div>
+                    <h4>Фізичні особи</h4>
+                    <p>Google форма для громадян</p>
+                    <span class="badge">Безкоштовно</span>
+                </a>
+
+                <a id="link-legal" href="https://forms.gle/EAz4ziGbij3UTUab8" target="_blank" rel="noopener noreferrer" class="request-card legal">
+                    <div class="request-card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
+                        </svg>
+                    </div>
+                    <h4>Юридичні особи</h4>
+                    <p>Google форма для організацій</p>
+                    <span class="badge">Безкоштовно</span>
+                </a>
+            </div>
+
+            <div class="info-badges">
+                <span class="info-badge green">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Безкоштовно
+                </span>
+                <span class="info-badge blue">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                    </svg>
+                    Офіційно
+                </span>
+                <span class="info-badge amber">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Архів 30 днів
+                </span>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="about-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 id="about-title">Про програму</h2>
+                <p id="about-description">Програма "Безпечне місто" реалізується з 2017 року для модернізації інфраструктури безпеки Дніпра.</p>
+            </div>
+
+            <div class="about-grid">
+                <div class="about-card">
+                    <div class="about-card-icon blue">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                        </svg>
+                    </div>
+                    <h3>Ситуаційний центр</h3>
+                    <p>Спеціалізований центр для моніторингу ситуації в місті та миттєвого зв'язку з поліцією та аварійними службами.</p>
+                </div>
+
+                <div class="about-card">
+                    <div class="about-card-icon yellow">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
+                        </svg>
+                    </div>
+                    <h3>Відеоспостереження</h3>
+                    <p>Понад 2 800 камер встановлено по всьому місту, з'єднаних понад 550 км оптоволоконних мереж.</p>
+                </div>
+
+                <div class="about-card">
+                    <div class="about-card-icon green">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                        </svg>
+                    </div>
+                    <h3>Публічний доступ</h3>
+                    <p>Прозорість є ключовою. Кожен мешканець може запитати доступ до записів для особистих інцидентів.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <div class="footer-logo">
+                        <div class="footer-logo-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                            </svg>
+                        </div>
+                        <div class="footer-logo-text">
+                            <h3>Безпечне Місто</h3>
+                            <span style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">Дніпровська міська рада</span>
+                        </div>
+                    </div>
+                    <p class="footer-desc">Комплексна система ситуаційного відеоспостереження, створена для забезпечення безпеки та захисту всіх мешканців міста Дніпра.</p>
+                </div>
+
+                <div class="footer-col">
+                    <h4>Контакти</h4>
+                    <ul class="footer-links">
+                        <li>
+                            <a href="tel:+380673701636">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+                                </svg>
+                                +380 67 370 16 36
+                            </a>
+                        </li>
+                        <li>
+                            <a href="tel:+380673701264">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+                                </svg>
+                                +380 67 370 12 64
+                            </a>
+                        </li>
+                        <li>
+                            <a href="mailto:inforadamonitoring@gmail.com">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                                </svg>
+                                inforadamonitoring@gmail.com
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4>Інформація</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://dniprorada.gov.ua" target="_blank" rel="noopener noreferrer">Офіційний сайт міськради</a></li>
+                        <li><a href="https://t.me/SaveCityDnipro_bot" target="_blank" rel="noopener noreferrer">Telegram бот</a></li>
+                        <li><a href="https://forms.gle/LqgvbhWfQq6xLwfz7" target="_blank" rel="noopener noreferrer">Google форма (фіз. особи)</a></li>
+                        <li><a href="https://forms.gle/EAz4ziGbij3UTUab8" target="_blank" rel="noopener noreferrer">Google форма (юр. особи)</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4>Адреса</h4>
+                    <div style="display: flex; align-items: flex-start; gap: 12px; color: rgba(255,255,255,0.6); font-size: 0.9rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px; color: var(--primary-light); flex-shrink: 0; margin-top: 2px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                        </svg>
+                        <p>
+                            Дніпровська міська рада<br>
+                            проспект Дмитра Яворницького, 75<br>
+                            м. Дніпро, Україна
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>2024 Дніпровська міська рада. Усі права захищено.</p>
+                <p>Програма "Безпечне місто" 2017-2024</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // =====================================================
+        // НАЛАШТУВАННЯ: Вставте URL вашого Apps Script Web App
+        // =====================================================
+        const GOOGLE_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
+        // =====================================================
+
+        function applyData(data) {
+            const setText = (id, value) => {
+                const el = document.getElementById(id);
+                if (el && value) {
+                    if (id === 'hero-title') {
+                        el.innerHTML = value + '<br><span id="hero-subtitle">' + (data.hero_subtitle || 'Дніпро') + '</span>';
+                    } else {
+                        el.textContent = value;
+                    }
+                }
+            };
+
+            const setLink = (id, value) => {
+                const el = document.getElementById(id);
+                if (el && value) el.href = value;
+            };
+
+            setText('hero-title', data.hero_title);
+            setText('hero-description', data.hero_description);
+            setText('stat-cameras', data.stat_cameras);
+            setText('stat-requests', data.stat_requests);
+            setText('stat-storage', data.stat_storage);
+            setText('stat-monitoring', data.stat_monitoring);
+            setText('about-title', data.about_title);
+            setText('about-description', data.about_description);
+
+            setLink('link-telegram', data.telegram_link);
+            setLink('link-individual', data.form_individual_link);
+            setLink('link-legal', data.form_legal_link);
+
+            // Оновити фонове зображення якщо є
+            if (data.hero_image) {
+                const heroBgImage = document.getElementById('hero-bg-image');
+                if (heroBgImage) {
+                    heroBgImage.src = data.hero_image;
+                }
+            }
+        }
+
+        // Спочатку пробуємо завантажити з Google Sheets
+        if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
+            fetch(GOOGLE_SCRIPT_URL)
+                .then(response => response.json())
+                .then(data => {
+                    applyData(data);
+                    localStorage.setItem('bezpechne_misto_cache', JSON.stringify(data));
+                })
+                .catch(err => {
+                    console.log('Google Sheets unavailable, trying cache...', err);
+                    const cached = localStorage.getItem('bezpechne_misto_cache');
+                    if (cached) {
+                        applyData(JSON.parse(cached));
+                    } else {
+                        fetch('data.json')
+                            .then(response => response.json())
+                            .then(data => applyData(data))
+                            .catch(e => console.log('Could not load data:', e));
+                    }
+                });
+        } else {
+            // Якщо Apps Script не налаштовано - використовуємо локальний файл
+            fetch('data.json')
+                .then(response => response.json())
+                .then(data => applyData(data))
+                .catch(err => console.log('Could not load data.json:', err));
+        }
+    </script>
+
+</body>
+</html>

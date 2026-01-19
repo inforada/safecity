@@ -1,0 +1,9 @@
+{
+  "name": "bezpechne-misto",
+  "version": "1.0.0",
+  "description": "Bezpechne Misto Dnipro - Safe City Website",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
