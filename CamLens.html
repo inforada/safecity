@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>CamViz · запити на відео</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0c111d;
+            background-image: radial-gradient(circle at 15% 30%, #1a2a3f 0%, #0a0f1a 90%);
+            font-family: 'Space Grotesk', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            color: #eef4ff;
+        }
+
+        /* Головний контейнер */
+        .camera-dashboard {
+            max-width: 1300px;
+            width: 100%;
+            background: rgba(10, 20, 35, 0.5);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(64, 128, 255, 0.25);
+            border-radius: clamp(20px, 5vw, 64px);
+            padding: clamp(12px, 4vw, 40px);
+            box-shadow: 0 40px 80px -20px #00000080, 0 0 0 1px rgba(0, 255, 255, 0.1) inset;
+        }
+
+        /* Шапка */
+        .header-cam {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: clamp(20px, 5vw, 40px);
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .title-block h1 {
+            font-size: clamp(1.2rem, 5vw, 2.8rem);
+            font-weight: 700;
+            background: linear-gradient(135deg, #b3e0ff, #7aaaff, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .title-block h1 i {
+            font-size: 1em;
+            color: #3b82f6;
+            text-shadow: 0 0 20px #3b82f6;
+        }
+
+        .title-block div {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .title-block div span {
+            font-size: clamp(0.7rem, 2vw, 0.9rem);
+            padding: 4px 12px;
+        }
+
+        .badge-cam {
+            background: rgba(0, 200, 255, 0.1);
+            border: 1px solid rgba(0, 200, 255, 0.4);
+            border-radius: 60px;
+            padding: 8px 20px;
+            font-weight: 600;
+            font-size: clamp(0.8rem, 2vw, 1.1rem);
+            color: #a0e0ff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        /* Метрики - АДАПТИВНА СІТКА */
+        .year-stats {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: clamp(8px, 2vw, 18px);
+            margin-bottom: clamp(25px, 5vw, 50px);
+        }
+
+        .year-card {
+            background: rgba(15, 25, 45, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: clamp(16px, 4vw, 34px);
+            padding: clamp(12px, 3vw, 24px) clamp(8px, 2vw, 16px);
+            border: 1px solid rgba(0, 160, 255, 0.3);
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .year-card:hover {
+            transform: translateY(-4px);
+            border-color: #3b82f6;
+            box-shadow: 0 0 30px #0055ff60;
+        }
+
+        .year-value {
+            font-size: clamp(1.2rem, 4vw, 3.2rem);
+            font-weight: 700;
+            line-height: 1.2;
+            background: linear-gradient(145deg, #ffffff, #b3d9ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 4px;
+        }
+
+        .year-label {
+            font-size: clamp(0.7rem, 2vw, 1.1rem);
+            font-weight: 600;
+            color: #8fb7e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            border-top: 1px dashed #2a4b70;
+            padding-top: 8px;
+            margin-top: 4px;
+        }
+
+        /* Аналітична панель */
+        .insight-panel {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: clamp(15px, 3vw, 28px);
+            margin-bottom: clamp(25px, 5vw, 40px);
+        }
+
+        .chart-area {
+            background: rgba(8, 18, 32, 0.7);
+            backdrop-filter: blur(12px);
+            border-radius: clamp(24px, 5vw, 48px);
+            padding: clamp(16px, 3vw, 28px);
+            border: 1px solid #2f5170;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .chart-header h3 {
+            font-size: clamp(0.9rem, 2.5vw, 1.6rem);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chart-header h3 i {
+            padding: 6px;
+            font-size: clamp(0.8rem, 2vw, 1.3rem);
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 0;
+            padding-bottom: 60%; /* Співвідношення сторін для адаптивності */
+            min-height: 150px;
+            max-height: 300px;
+            width: 100%;
+        }
+
+        .chart-wrapper canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .stats-breakdown {
+            background: rgba(8, 18, 32, 0.7);
+            backdrop-filter: blur(12px);
+            border-radius: clamp(24px, 5vw, 48px);
+            padding: clamp(16px, 3vw, 28px);
+            border: 1px solid #2f5170;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .total-requests {
+            background: linear-gradient(145deg, #142b44, #0a1a2e);
+            border-radius: clamp(20px, 4vw, 36px);
+            padding: clamp(16px, 3vw, 24px);
+            border: 1px solid #3c6990;
+        }
+
+        .total-number {
+            font-size: clamp(2rem, 6vw, 4.2rem);
+            font-weight: 700;
+            background: linear-gradient(145deg, #fff, #b1d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.2;
+            margin: 5px 0;
+        }
+
+        .stat-bar {
+            flex: 1;
+            height: 8px;
+            background: #1e3a5a;
+            border-radius: 20px;
+            overflow: hidden;
+            margin: 0 8px;
+        }
+
+        .stat-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #a855f7);
+            box-shadow: 0 0 10px #3b82f6;
+            width: 0%;
+            transition: width 1.5s ease-in-out;
+            border-radius: 20px;
+        }
+
+        /* Футер */
+        .feature-footer {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: clamp(15px, 3vw, 28px);
+            margin-top: 20px;
+        }
+
+        .insight-card {
+            background: rgba(12, 24, 40, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: clamp(24px, 5vw, 38px);
+            padding: clamp(16px, 3vw, 26px);
+            border: 1px solid #345d84;
+            display: flex;
+            align-items: center;
+            gap: clamp(12px, 3vw, 24px);
+        }
+
+        .icon-large {
+            min-width: 50px;
+            width: clamp(50px, 8vw, 70px);
+            height: clamp(50px, 8vw, 70px);
+            background: #152f4a;
+            border-radius: clamp(16px, 4vw, 30px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(1.5rem, 4vw, 2.2rem);
+            color: #5aa9ff;
+            border: 1px solid #3d7bb3;
+            flex-shrink: 0;
+        }
+
+        .insight-card h4 {
+            font-size: clamp(0.9rem, 2.5vw, 1.3rem);
+            margin-bottom: 4px;
+        }
+
+        .insight-card p {
+            font-size: clamp(0.8rem, 2vw, 1rem);
+            color: #9fb9d4;
+        }
+
+        /* АДАПТАЦІЯ ДЛЯ ВСІХ РОЗМІРІВ */
+        @media (max-width: 1100px) {
+            .year-stats {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 900px) {
+            .insight-panel {
+                grid-template-columns: 1fr;
+            }
+            .chart-wrapper {
+                padding-bottom: 55%;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .feature-footer {
+                grid-template-columns: 1fr;
+            }
+            .header-cam {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .badge-cam {
+                width: 100%;
+                justify-content: center;
+                white-space: normal;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .year-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .chart-wrapper {
+                padding-bottom: 50%;
+            }
+            .title-block div {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 450px) {
+            .year-stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+            .year-card {
+                padding: 10px 5px;
+            }
+            .year-value {
+                font-size: 1.2rem;
+            }
+            .year-label {
+                font-size: 0.7rem;
+            }
+            .chart-wrapper {
+                padding-bottom: 45%;
+            }
+            .insight-card {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 350px) {
+            .year-stats {
+                grid-template-columns: 1fr;
+            }
+            .year-value {
+                font-size: 1.4rem;
+            }
+            .badge-cam {
+                font-size: 0.7rem;
+                padding: 6px 12px;
+            }
+            .total-number {
+                font-size: 2rem;
+            }
+            .chart-wrapper {
+                padding-bottom: 40%;
+            }
+        }
+
+        /* Додаткові стилі для прогрес-барів */
+        #statBars > div {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 500px) {
+            #statBars > div {
+                flex-wrap: wrap;
+            }
+            .stat-bar {
+                flex-basis: 100%;
+                order: 3;
+                margin: 5px 0 0 0;
+            }
+            #statBars span:last-child {
+                margin-left: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="camera-dashboard">
+
+    <div class="header-cam">
+        <div class="title-block">
+            <h1><i class="fas fa-video"></i> CamLens · запити на відео</h1>
+            <div>
+                <span style="background: #113355; border-radius: 40px; border:1px solid #2266aa;"><i class="fas fa-database"></i> архів 2020–2025</span>
+                <span style="background: #113355; border-radius: 40px; border:1px solid #aa22aa;"><i class="fas fa-chart-line"></i> +288% з 2020</span>
+            </div>
+        </div>
+        <div class="badge-cam">
+            <i class="fas fa-circle" style="font-size: 0.7rem;"></i> реальний час
+        </div>
+    </div>
+
+    <div class="year-stats">
+        <div class="year-card"><div class="year-value" data-target="657">0</div><div class="year-label"><i class="fas fa-calendar"></i>2020</div></div>
+        <div class="year-card"><div class="year-value" data-target="1303">0</div><div class="year-label"><i class="fas fa-calendar"></i>2021</div></div>
+        <div class="year-card"><div class="year-value" data-target="901">0</div><div class="year-label"><i class="fas fa-calendar"></i>2022</div></div>
+        <div class="year-card"><div class="year-value" data-target="1558">0</div><div class="year-label"><i class="fas fa-calendar"></i>2023</div></div>
+        <div class="year-card"><div class="year-value" data-target="2092">0</div><div class="year-label"><i class="fas fa-calendar"></i>2024</div></div>
+        <div class="year-card"><div class="year-value" data-target="2550">0</div><div class="year-label"><i class="fas fa-calendar"></i>2025</div></div>
+    </div>
+
+    <div class="insight-panel">
+        <div class="chart-area">
+            <div class="chart-header">
+                <h3><i class="fas fa-chart-bar" style="background:#1e3b5a; padding:8px; border-radius:16px; color:#38bdf8;"></i> Динаміка запитів</h3>
+                <span style="background:#1e3a5f; border-radius:60px; padding:6px 16px; color:#9ac8ff; border:1px solid #3482cc; font-size:clamp(0.7rem,2vw,0.9rem);">CAGR +31%</span>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="videoRequestsChart"></canvas>
+            </div>
+        </div>
+
+        <div class="stats-breakdown">
+            <div class="total-requests">
+                <div style="color:#88b9e6; text-transform:uppercase; letter-spacing:1px; font-size: clamp(0.7rem,2vw,0.9rem);">загальна кількість</div>
+                <div class="total-number">9 061</div>
+                <div style="color:#b0d4f0; font-size:clamp(0.7rem,2vw,0.9rem);"><i class="fas fa-arrow-up" style="color:#10b981;"></i> +288% vs 2020</div>
+            </div>
+            <div id="statBars"></div>
+            <div style="background:#0f1e30; border-radius: 24px; padding: 16px; border:1px solid #3f6b97;">
+                <div style="display: flex; justify-content: space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <span style="font-size:clamp(0.7rem,2vw,0.9rem);"><i class="fas fa-calendar-check" style="color:#38bdf8;"></i> прогноз 2026</span>
+                    <span style="font-weight:700; font-size: clamp(1.2rem,4vw,1.6rem); color: #fff;">~3150</span>
+                </div>
+                <div style="height: 6px; background:#1b3a5c; border-radius:10px; margin-top:10px;">
+                    <div style="width:82%; height:6px; background: linear-gradient(90deg,#2563eb,#a855f7); border-radius:10px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="feature-footer">
+        <div class="insight-card">
+            <div class="icon-large"><i class="fas fa-rocket"></i></div>
+            <div>
+                <h4>Піковий рік — 2025</h4>
+                <p>2 550 запитів · грудень</p>
+            </div>
+        </div>
+        <div class="insight-card">
+            <div class="icon-large"><i class="fas fa-chart-simple"></i></div>
+            <div>
+                <h4>Аномалія 2022</h4>
+                <p>Падіння на 30% через війну</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        const years = ['2020', '2021', '2022', '2023', '2024', '2025'];
+        const requests = [657, 1303, 901, 1558, 2092, 2550];
+
+        // Анімація чисел
+        document.querySelectorAll('.year-value').forEach(el => {
+            const target = +el.getAttribute('data-target');
+            let count = 0;
+            const step = Math.ceil(target / 50);
+            const update = () => {
+                count += step;
+                if (count < target) {
+                    el.innerText = Math.floor(count);
+                    requestAnimationFrame(() => setTimeout(update, 16));
+                } else {
+                    el.innerText = target;
+                }
+            };
+            update();
+        });
+
+        // Графік з адаптивними розмірами шрифтів
+        const ctx = document.getElementById('videoRequestsChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: years,
+                datasets: [{
+                    data: requests,
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 8,
+                    barPercentage: 0.6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: { backgroundColor: '#1e3347' }
+                },
+                scales: {
+                    y: { 
+                        grid: { color: '#1f405e' }, 
+                        ticks: { 
+                            color: '#9bc9ff',
+                            font: { size: window.innerWidth < 500 ? 8 : 10 }
+                        }
+                    },
+                    x: { 
+                        grid: { display: false }, 
+                        ticks: { 
+                            color: '#b3d6ff',
+                            font: { size: window.innerWidth < 500 ? 8 : 10 },
+                            maxRotation: 45,
+                            minRotation: 30
+                        }
+                    }
+                }
+            }
+        });
+
+        // Оновлення розміру шрифтів графіка при ресайзі
+        window.addEventListener('resize', () => {
+            const fontSize = window.innerWidth < 500 ? 8 : 10;
+            chart.options.scales.y.ticks.font = { size: fontSize };
+            chart.options.scales.x.ticks.font = { size: fontSize };
+            chart.update();
+        });
+
+        // Прогрес-бари
+        const container = document.getElementById('statBars');
+        container.innerHTML = '';
+        requests.forEach((val, i) => {
+            const pct = (val / 2550) * 100;
+            const div = document.createElement('div');
+            div.innerHTML = `
+                <span style="min-width:45px; font-weight:700; font-size:clamp(0.7rem,2vw,0.9rem);">${years[i]}</span>
+                <div class="stat-bar"><div class="stat-fill" style="width:${pct}%"></div></div>
+                <span style="min-width:45px; text-align:right; font-size:clamp(0.7rem,2vw,0.9rem);">${val}</span>
+            `;
+            container.appendChild(div);
+        });
+    })();
+</script>
+</body>
+</html>
