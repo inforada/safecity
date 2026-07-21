@@ -19,6 +19,8 @@
             --foreground: #0f172a;
             --muted: #64748b;
             --border: #e2e8f0;
+            --dashboard-accent: #7c3aed;
+            --dashboard-accent-light: #a78bfa;
         }
 
         * {
@@ -197,6 +199,79 @@
             border-color: var(--primary-light);
         }
 
+        /* --- ВИДІЛЕНИЙ БЛОК ДЛЯ ДАШБОРДУ (фіолетовий відтінок) --- */
+        .stat-card.dashboard-card {
+            background: linear-gradient(145deg, #1a1a3e, #2d1b4e);
+            border: 2px solid var(--dashboard-accent);
+            box-shadow: 0 4px 30px rgba(124, 58, 237, 0.2);
+        }
+
+        .stat-card.dashboard-card:hover {
+            border-color: var(--dashboard-accent-light);
+            box-shadow: 0 8px 40px rgba(124, 58, 237, 0.35);
+            transform: translateY(-4px) scale(1.02);
+        }
+
+        .stat-card.dashboard-card .stat-icon {
+            background: rgba(124, 58, 237, 0.2);
+            border: 1px solid rgba(124, 58, 237, 0.3);
+        }
+
+        .stat-card.dashboard-card .stat-icon svg {
+            color: var(--dashboard-accent-light);
+        }
+
+        .stat-card.dashboard-card .stat-value {
+            background: linear-gradient(145deg, #c4b5fd, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-card.dashboard-card .stat-label {
+            color: rgba(196, 181, 253, 0.8);
+        }
+
+        .stat-card.dashboard-card .dashboard-hint {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--dashboard-accent-light);
+            text-decoration: none;
+            z-index: 5;
+            pointer-events: auto;
+            opacity: 0.9;
+            transition: opacity 0.2s ease;
+            letter-spacing: 0.02em;
+            background: rgba(124, 58, 237, 0.15);
+            padding: 2px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(124, 58, 237, 0.2);
+        }
+
+        .stat-card.dashboard-card .dashboard-hint:hover {
+            opacity: 1;
+            background: rgba(124, 58, 237, 0.25);
+        }
+
+        .stat-card.dashboard-card .dashboard-badge-top {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: var(--dashboard-accent);
+            color: white;
+            font-size: 0.6rem;
+            font-weight: 700;
+            padding: 2px 14px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
+        }
+
+        /* --- Кінець виділеного блоку --- */
+
         .stat-icon {
             width: 56px;
             height: 56px;
@@ -230,27 +305,6 @@
             font-size: 1rem;
             color: var(--muted);
             font-weight: 500;
-        }
-
-        /* --- Простий текст у правому верхньому куті --- */
-        .stat-card .dashboard-link {
-            position: absolute;
-            top: 12px;
-            right: 16px;
-            font-size: 0.7rem;
-            font-weight: 500;
-            color: var(--primary);
-            text-decoration: none;
-            z-index: 5;
-            pointer-events: auto;
-            opacity: 0.8;
-            transition: opacity 0.2s ease;
-            letter-spacing: 0.02em;
-        }
-
-        .stat-card .dashboard-link:hover {
-            opacity: 1;
-            color: var(--primary);
         }
 
         .request-section {
@@ -592,11 +646,11 @@
             color: rgba(255, 255, 255, 0.4);
         }
 
-        /* --- Адаптив для тексту --- */
-        @media (max-width: 480px) {
-            .stat-card .dashboard-link {
-                font-size: 0.6rem;
-                top: 10px;
+        @media (max-width: 400px) {
+            .stat-card .dashboard-hint {
+                font-size: 0.65rem;
+                padding: 2px 10px;
+                top: 12px;
                 right: 12px;
             }
         }
@@ -627,11 +681,10 @@
     <section id="stats" class="stats">
         <div class="container">
             <div class="stats-grid">
-                <!-- КАРТКА З КАМЕРАМИ (простий текст у правому верхньому куті) -->
-                <a href="CamLens.html" target="_blank" class="stat-card" style="text-decoration: none; color: inherit; display: block; position: relative;">
-                    <!-- Простий текст без заливки, рамки, іконок -->
-                    <span class="dashboard-link">відкрити дашборд</span>
-
+                <!-- ВИДІЛЕНИЙ БЛОК З КАМЕРАМИ (фіолетовий відтінок) -->
+                <a href="CamLens.html" target="_blank" class="stat-card dashboard-card" style="text-decoration: none; color: inherit; display: block; position: relative;">
+                    <span class="dashboard-badge-top">ДАШБОРД</span>
+                    <span class="dashboard-hint">відкрити дашборд</span>
                     <div class="stat-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
@@ -641,6 +694,7 @@
                     <div class="stat-label">Оброблено запитів з початку 2026 року. Дізнатися більше...</div>
                 </a>
 
+                <!-- Інші картки залишаються без змін -->
                 <div class="stat-card">
                     <div class="stat-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -794,7 +848,7 @@
                             <span style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">Дніпровська міська рада</span>
                         </div>
                     </div>
-                    <p class="footer-desc">Ситуаційний центр міста Дніпра, КП «ІНФО-РАДА-ДНІПРО». На сторожі безпеки та на зв’язку 24/7.</p>
+                    <p class="footer-desc">Ситуаційний центр міста Дніпра, КП «ІНФО-РАДА-ДНІПРО». На сторожі безпеки та на зв'язку 24/7.</p>
                 </div>
 
                 <div class="footer-col">
