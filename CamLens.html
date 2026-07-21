@@ -26,7 +26,6 @@
             color: #eef4ff;
         }
 
-        /* Головний контейнер */
         .camera-dashboard {
             max-width: 1300px;
             width: 100%;
@@ -39,7 +38,6 @@
             box-shadow: 0 40px 80px -20px #00000080, 0 0 0 1px rgba(0, 255, 255, 0.1) inset;
         }
 
-        /* Шапка */
         .header-cam {
             display: flex;
             justify-content: space-between;
@@ -93,10 +91,9 @@
             white-space: nowrap;
         }
 
-        /* Метрики - АДАПТИВНА СІТКА */
         .year-stats {
             display: grid;
-            grid-template-columns: repeat(6, 1fr);
+            grid-template-columns: repeat(7, 1fr);
             gap: clamp(8px, 2vw, 18px);
             margin-bottom: clamp(25px, 5vw, 50px);
         }
@@ -115,6 +112,40 @@
             transform: translateY(-4px);
             border-color: #3b82f6;
             box-shadow: 0 0 30px #0055ff60;
+        }
+
+        /* --- Стиль для 2026 року (виділення) --- */
+        .year-card.year-current {
+            background: rgba(30, 80, 140, 0.5);
+            border: 2px solid #fbbf24;
+            box-shadow: 0 0 40px rgba(251, 191, 36, 0.15);
+            position: relative;
+        }
+
+        .year-card.year-current::after {
+            content: "● поточний";
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #fbbf24;
+            color: #0c111d;
+            font-size: 0.55rem;
+            font-weight: 700;
+            padding: 2px 10px;
+            border-radius: 20px;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .year-card.year-current .year-value {
+            background: linear-gradient(145deg, #fbbf24, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .year-card.year-current .year-label {
+            color: #fbbf24;
+            border-top-color: #fbbf2440;
         }
 
         .year-value {
@@ -140,7 +171,6 @@
             margin-top: 4px;
         }
 
-        /* Аналітична панель */
         .insight-panel {
             display: grid;
             grid-template-columns: 1.5fr 1fr;
@@ -180,7 +210,7 @@
         .chart-wrapper {
             position: relative;
             height: 0;
-            padding-bottom: 60%; /* Співвідношення сторін для адаптивності */
+            padding-bottom: 60%;
             min-height: 150px;
             max-height: 300px;
             width: 100%;
@@ -240,7 +270,11 @@
             border-radius: 20px;
         }
 
-        /* Футер */
+        .stat-fill.current {
+            background: linear-gradient(90deg, #fbbf24, #f59e0b);
+            box-shadow: 0 0 15px #fbbf24;
+        }
+
         .feature-footer {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -284,10 +318,9 @@
             color: #9fb9d4;
         }
 
-        /* АДАПТАЦІЯ ДЛЯ ВСІХ РОЗМІРІВ */
         @media (max-width: 1100px) {
             .year-stats {
-                grid-template-columns: repeat(3, 1fr);
+                grid-template-columns: repeat(4, 1fr);
             }
         }
 
@@ -313,6 +346,9 @@
                 justify-content: center;
                 white-space: normal;
                 text-align: center;
+            }
+            .year-stats {
+                grid-template-columns: repeat(3, 1fr);
             }
         }
 
@@ -349,6 +385,12 @@
                 flex-direction: column;
                 text-align: center;
             }
+            .year-card.year-current::after {
+                font-size: 0.45rem;
+                top: -6px;
+                right: -6px;
+                padding: 1px 8px;
+            }
         }
 
         @media (max-width: 350px) {
@@ -370,7 +412,6 @@
             }
         }
 
-        /* Додаткові стилі для прогрес-барів */
         #statBars > div {
             display: flex;
             align-items: center;
@@ -401,12 +442,13 @@
         <div class="title-block">
             <h1><i class="fas fa-video"></i> CamLens · запити на відео</h1>
             <div>
-                <span style="background: #113355; border-radius: 40px; border:1px solid #2266aa;"><i class="fas fa-database"></i> архів 2020–2025</span>
+                <span style="background: #113355; border-radius: 40px; border:1px solid #2266aa;"><i class="fas fa-database"></i> архів 2020–2026</span>
                 <span style="background: #113355; border-radius: 40px; border:1px solid #aa22aa;"><i class="fas fa-chart-line"></i> +288% з 2020</span>
+                <span style="background: #1a3a2a; border-radius: 40px; border:1px solid #fbbf24; color: #fbbf24;"><i class="fas fa-calendar-alt"></i> 2026 триває</span>
             </div>
         </div>
         <div class="badge-cam">
-            <i class="fas fa-circle" style="font-size: 0.7rem;"></i> реальний час
+            <i class="fas fa-circle" style="font-size: 0.7rem; color: #fbbf24;"></i> 1327 камер · 2026
         </div>
     </div>
 
@@ -417,6 +459,8 @@
         <div class="year-card"><div class="year-value" data-target="1558">0</div><div class="year-label"><i class="fas fa-calendar"></i>2023</div></div>
         <div class="year-card"><div class="year-value" data-target="2092">0</div><div class="year-label"><i class="fas fa-calendar"></i>2024</div></div>
         <div class="year-card"><div class="year-value" data-target="2550">0</div><div class="year-label"><i class="fas fa-calendar"></i>2025</div></div>
+        <!-- 2026 — виділений карткою -->
+        <div class="year-card year-current"><div class="year-value" data-target="1327">0</div><div class="year-label"><i class="fas fa-calendar"></i>2026</div></div>
     </div>
 
     <div class="insight-panel">
@@ -433,17 +477,21 @@
         <div class="stats-breakdown">
             <div class="total-requests">
                 <div style="color:#88b9e6; text-transform:uppercase; letter-spacing:1px; font-size: clamp(0.7rem,2vw,0.9rem);">загальна кількість</div>
-                <div class="total-number">9 061</div>
+                <div class="total-number">10 388</div>
                 <div style="color:#b0d4f0; font-size:clamp(0.7rem,2vw,0.9rem);"><i class="fas fa-arrow-up" style="color:#10b981;"></i> +288% vs 2020</div>
             </div>
             <div id="statBars"></div>
-            <div style="background:#0f1e30; border-radius: 24px; padding: 16px; border:1px solid #3f6b97;">
+            <div style="background:#0f1e30; border-radius: 24px; padding: 16px; border:1px solid #fbbf2460;">
                 <div style="display: flex; justify-content: space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-                    <span style="font-size:clamp(0.7rem,2vw,0.9rem);"><i class="fas fa-calendar-check" style="color:#38bdf8;"></i> прогноз 2026</span>
-                    <span style="font-weight:700; font-size: clamp(1.2rem,4vw,1.6rem); color: #fff;">~3150</span>
+                    <span style="font-size:clamp(0.7rem,2vw,0.9rem);"><i class="fas fa-calendar-check" style="color:#fbbf24;"></i> 2026 (поточний)</span>
+                    <span style="font-weight:700; font-size: clamp(1.2rem,4vw,1.6rem); color: #fbbf24;">1 327</span>
                 </div>
                 <div style="height: 6px; background:#1b3a5c; border-radius:10px; margin-top:10px;">
-                    <div style="width:82%; height:6px; background: linear-gradient(90deg,#2563eb,#a855f7); border-radius:10px;"></div>
+                    <div style="width:52%; height:6px; background: linear-gradient(90deg,#fbbf24,#f59e0b); border-radius:10px; box-shadow: 0 0 15px #fbbf2460;"></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:#6a8aa8; margin-top:4px;">
+                    <span>станом на 21.07.2026</span>
+                    <span>52% від 2025</span>
                 </div>
             </div>
         </div>
@@ -457,11 +505,11 @@
                 <p>2 550 запитів · грудень</p>
             </div>
         </div>
-        <div class="insight-card">
-            <div class="icon-large"><i class="fas fa-chart-simple"></i></div>
+        <div class="insight-card" style="border-color: #fbbf2450;">
+            <div class="icon-large" style="border-color: #fbbf24; color: #fbbf24;"><i class="fas fa-clock"></i></div>
             <div>
-                <h4>Аномалія 2022</h4>
-                <p>Падіння на 30% через війну</p>
+                <h4 style="color: #fbbf24;">2026 триває</h4>
+                <p>1 327 запитів · 1327 камер</p>
             </div>
         </div>
     </div>
@@ -469,8 +517,8 @@
 
 <script>
     (function() {
-        const years = ['2020', '2021', '2022', '2023', '2024', '2025'];
-        const requests = [657, 1303, 901, 1558, 2092, 2550];
+        const years = ['2020', '2021', '2022', '2023', '2024', '2025', '2026'];
+        const requests = [657, 1303, 901, 1558, 2092, 2550, 1327];
 
         // Анімація чисел
         document.querySelectorAll('.year-value').forEach(el => {
@@ -497,7 +545,7 @@
                 labels: years,
                 datasets: [{
                     data: requests,
-                    backgroundColor: '#3b82f6',
+                    backgroundColor: ['#3b82f6', '#3b82f6', '#3b82f6', '#3b82f6', '#3b82f6', '#3b82f6', '#fbbf24'],
                     borderRadius: 8,
                     barPercentage: 0.6
                 }]
@@ -507,7 +555,14 @@
                 maintainAspectRatio: false,
                 plugins: { 
                     legend: { display: false },
-                    tooltip: { backgroundColor: '#1e3347' }
+                    tooltip: { 
+                        backgroundColor: '#1e3347',
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y + ' запитів';
+                            }
+                        }
+                    }
                 },
                 scales: {
                     y: { 
@@ -538,16 +593,18 @@
             chart.update();
         });
 
-        // Прогрес-бари
+        // Прогрес-бари з виділенням 2026
         const container = document.getElementById('statBars');
         container.innerHTML = '';
         requests.forEach((val, i) => {
-            const pct = (val / 2550) * 100;
+            const maxVal = 2550;
+            const pct = (val / maxVal) * 100;
+            const isCurrent = i === 6;
             const div = document.createElement('div');
             div.innerHTML = `
-                <span style="min-width:45px; font-weight:700; font-size:clamp(0.7rem,2vw,0.9rem);">${years[i]}</span>
-                <div class="stat-bar"><div class="stat-fill" style="width:${pct}%"></div></div>
-                <span style="min-width:45px; text-align:right; font-size:clamp(0.7rem,2vw,0.9rem);">${val}</span>
+                <span style="min-width:45px; font-weight:700; font-size:clamp(0.7rem,2vw,0.9rem); ${isCurrent ? 'color:#fbbf24;' : ''}">${years[i]}</span>
+                <div class="stat-bar"><div class="stat-fill ${isCurrent ? 'current' : ''}" style="width:${pct}%"></div></div>
+                <span style="min-width:45px; text-align:right; font-size:clamp(0.7rem,2vw,0.9rem); ${isCurrent ? 'color:#fbbf24;' : ''}">${val}</span>
             `;
             container.appendChild(div);
         });
