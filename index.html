@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<link rel="icon" type="image/png" href="favicon.png">
+    <link rel="icon" type="image/png" href="favicon.png">
     <title>Безпечне Місто Дніпро | Дніпровська міська рада</title>
     <meta name="description" content="Ми - Ситуаційний центр Дніпра. Працюємо в межах міської програми «Безпечне місто», яку реалізує КП «ІНФО-РАДА-ДНІПРО». Докладаємо максимум зусиль задля посилення нашої безпеки. Моніторимо міський простір, взаємодіємо з правоохоронними органами та службами екстреного реагування, відповідаємо на запити дніпрян щодо отримання відео з камер відеоспостереження. Ми поруч, на зв’язку і на сторожі безпеки 24/7.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -178,12 +178,17 @@
         }
 
         .stat-card {
+            position: relative;
             background: var(--card);
             padding: 32px;
             border-radius: 16px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
             border: 1px solid var(--border);
             transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            overflow: hidden;
         }
 
         .stat-card:hover {
@@ -225,6 +230,46 @@
             font-size: 1rem;
             color: var(--muted);
             font-weight: 500;
+        }
+
+        /* --- Нова кнопка "Відкрити дашборд" у верхньому правому куті картки --- */
+        .stat-card .dashboard-badge {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #1e40af;
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.75rem;
+            padding: 6px 14px;
+            border-radius: 30px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            box-shadow: 0 4px 10px rgba(30, 64, 175, 0.25);
+            transition: background 0.2s ease, transform 0.2s ease;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            z-index: 5;
+            pointer-events: auto;
+        }
+
+        .stat-card .dashboard-badge svg {
+            width: 16px;
+            height: 16px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .stat-card .dashboard-badge:hover {
+            background: #2563eb;
+            transform: scale(1.05);
         }
 
         .request-section {
@@ -592,8 +637,16 @@
     <section id="stats" class="stats">
         <div class="container">
             <div class="stats-grid">
-				<a href="CamLens.html" target="_blank" style="text-decoration: none; color: inherit;">
-                <div class="stat-card" >
+                <!-- КАРТКА З КАМЕРАМИ (з кнопкою "Відкрити дашборд") -->
+                <a href="CamLens.html" target="_blank" class="stat-card" style="text-decoration: none; color: inherit; display: block; position: relative;">
+                    <!-- Бейдж "Відкрити дашборд" у верхньому правому куті -->
+                    <span class="dashboard-badge">
+                        <svg viewBox="0 0 24 24" width="16" height="16">
+                            <path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                        </svg>
+                        Відкрити дашборд
+                    </span>
+
                     <div class="stat-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
@@ -601,8 +654,8 @@
                     </div>
                     <div class="stat-value" id="stat-requests">1326+</div>
                     <div class="stat-label">Оброблено запитів з початку 2026 року. Дізнатися більше...</div>
-                </div>
-				</a>
+                </a>
+
                 <div class="stat-card">
                     <div class="stat-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -612,12 +665,12 @@
                     <div class="stat-value" id="stat-cameras">2 886+</div>
                     <div class="stat-label">Камер встановлено</div>
                 </div>
-				
+
                 <div class="stat-card">
                     <div class="stat-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-  							<path stroke-linecap="round" stroke-linejoin="round" d="M9.348 14.652a3.75 3.75 0 0 1 0-5.304m5.304 0a3.75 3.75 0 0 1 0 5.304m-7.425 2.121a6.75 6.75 0 0 1 0-9.546m9.546 0a6.75 6.75 0 0 1 0 9.546M5.106 18.894c-3.808-3.807-3.808-9.98 0-13.788m13.788 0c3.808 3.807 3.808 9.98 0 13.788M12 12h.008v.008H12V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
-						</svg>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.348 14.652a3.75 3.75 0 0 1 0-5.304m5.304 0a3.75 3.75 0 0 1 0 5.304m-7.425 2.121a6.75 6.75 0 0 1 0-9.546m9.546 0a6.75 6.75 0 0 1 0 9.546M5.106 18.894c-3.808-3.807-3.808-9.98 0-13.788m13.788 0c3.808 3.807 3.808 9.98 0 13.788M12 12h.008v.008H12V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                        </svg>
                     </div>
                     <div class="stat-value" id="stat-storage">557,32 км</div>
                     <div class="stat-label">Повітряних мереж</div>
@@ -625,9 +678,8 @@
                 <div class="stat-card">
                     <div class="stat-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-  							<path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
-						</svg>
-
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
+                        </svg>
                     </div>
                     <div class="stat-value" id="stat-monitoring">107,53 км</div>
                     <div class="stat-label">Підземних мереж</div>
@@ -679,7 +731,7 @@
             </div>
 
             <div class="info-badges">
-				<span class="info-badge blue">
+                <span class="info-badge blue">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
                     </svg>
@@ -718,8 +770,8 @@
                     <h3>Ситуаційний центр</h3>
                     <p>Власний спеціалізований Ситуаційний центр ДМР, робота задля оперативного надання відповідей на запити містян щодо отримання відео.</p>
                 </div>
-				
-				<div class="about-card">
+
+                <div class="about-card">
                     <div class="about-card-icon green">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
@@ -796,7 +848,7 @@
                         <li><a href="https://dniprorada.gov.ua" target="_blank" rel="noopener noreferrer">Офіційний сайт Дніпровської міської ради</a></li>
                         <li><a href="https://forms.gle/LqgvbhWfQq6xLwfz7" target="_blank" rel="noopener noreferrer">Google форма (фіз. особи)</a></li>
                         <li><a href="https://forms.gle/EAz4ziGbij3UTUab8" target="_blank" rel="noopener noreferrer">Google форма (юр. особи)</a></li>
-						<li><a href="https://t.me/SaveCityDnipro_bot" target="_blank" rel="noopener noreferrer">Telegram бот</a></li>
+                        <li><a href="https://t.me/SaveCityDnipro_bot" target="_blank" rel="noopener noreferrer">Telegram бот</a></li>
                     </ul>
                 </div>
 
@@ -860,7 +912,6 @@
             setLink('link-individual', data.form_individual_link);
             setLink('link-legal', data.form_legal_link);
 
-            // Оновити фонове зображення якщо є
             if (data.hero_image) {
                 const heroBgImage = document.getElementById('hero-bg-image');
                 if (heroBgImage) {
@@ -869,7 +920,6 @@
             }
         }
 
-        // Спочатку пробуємо завантажити з Google Sheets
         if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
             fetch(GOOGLE_SCRIPT_URL)
                 .then(response => response.json())
@@ -890,7 +940,6 @@
                     }
                 });
         } else {
-            // Якщо Apps Script не налаштовано - використовуємо локальний файл
             fetch('data.json')
                 .then(response => response.json())
                 .then(data => applyData(data))
