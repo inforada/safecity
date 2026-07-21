@@ -114,7 +114,6 @@
             box-shadow: 0 0 30px #0055ff60;
         }
 
-        /* --- Стиль для 2026 року (виділення) --- */
         .year-card.year-current {
             background: rgba(30, 80, 140, 0.5);
             border: 2px solid #fbbf24;
@@ -275,6 +274,12 @@
             box-shadow: 0 0 15px #fbbf24;
         }
 
+        /* Стиль для червоного кольору війни */
+        .stat-fill.war {
+            background: linear-gradient(90deg, #dc2626, #991b1b);
+            box-shadow: 0 0 15px #dc262660;
+        }
+
         .feature-footer {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -293,6 +298,11 @@
             gap: clamp(12px, 3vw, 24px);
         }
 
+        .insight-card.war-card {
+            border-color: #dc262660;
+            background: rgba(40, 10, 10, 0.6);
+        }
+
         .icon-large {
             min-width: 50px;
             width: clamp(50px, 8vw, 70px);
@@ -308,6 +318,12 @@
             flex-shrink: 0;
         }
 
+        .icon-large.war-icon {
+            background: #2a1010;
+            border-color: #dc2626;
+            color: #dc2626;
+        }
+
         .insight-card h4 {
             font-size: clamp(0.9rem, 2.5vw, 1.3rem);
             margin-bottom: 4px;
@@ -316,6 +332,14 @@
         .insight-card p {
             font-size: clamp(0.8rem, 2vw, 1rem);
             color: #9fb9d4;
+        }
+
+        .insight-card.war-card h4 {
+            color: #f87171;
+        }
+
+        .insight-card.war-card p {
+            color: #d4a0a0;
         }
 
         @media (max-width: 1100px) {
@@ -459,7 +483,6 @@
         <div class="year-card"><div class="year-value" data-target="1558">0</div><div class="year-label"><i class="fas fa-calendar"></i>2023</div></div>
         <div class="year-card"><div class="year-value" data-target="2092">0</div><div class="year-label"><i class="fas fa-calendar"></i>2024</div></div>
         <div class="year-card"><div class="year-value" data-target="2550">0</div><div class="year-label"><i class="fas fa-calendar"></i>2025</div></div>
-        <!-- 2026 — виділений карткою -->
         <div class="year-card year-current"><div class="year-value" data-target="1327">0</div><div class="year-label"><i class="fas fa-calendar"></i>2026</div></div>
     </div>
 
@@ -498,13 +521,16 @@
     </div>
 
     <div class="feature-footer">
-        <div class="insight-card">
-            <div class="icon-large"><i class="fas fa-rocket"></i></div>
+        <!-- Картка про війну (замість "Піковий рік") -->
+        <div class="insight-card war-card">
+            <div class="icon-large war-icon"><i class="fas fa-shield-halved"></i></div>
             <div>
-                <h4>Піковий рік — 2025</h4>
-                <p>2 550 запитів · грудень</p>
+                <h4>Війна · 2022</h4>
+                <p>Падіння на 30% · 901 запит</p>
+                <p style="font-size:0.75rem; color:#b08080; margin-top:4px;"><i class="fas fa-arrow-down" style="color:#dc2626;"></i> найнижчий показник за 6 років</p>
             </div>
         </div>
+        <!-- Друга картка залишається про 2026 -->
         <div class="insight-card" style="border-color: #fbbf2450;">
             <div class="icon-large" style="border-color: #fbbf24; color: #fbbf24;"><i class="fas fa-clock"></i></div>
             <div>
@@ -545,7 +571,7 @@
                 labels: years,
                 datasets: [{
                     data: requests,
-                    backgroundColor: ['#3b82f6', '#3b82f6', '#3b82f6', '#3b82f6', '#3b82f6', '#3b82f6', '#fbbf24'],
+                    backgroundColor: ['#3b82f6', '#3b82f6', '#dc2626', '#3b82f6', '#3b82f6', '#3b82f6', '#fbbf24'],
                     borderRadius: 8,
                     barPercentage: 0.6
                 }]
@@ -593,18 +619,28 @@
             chart.update();
         });
 
-        // Прогрес-бари з виділенням 2026
+        // Прогрес-бари з виділенням 2022 (війна) та 2026 (поточний)
         const container = document.getElementById('statBars');
         container.innerHTML = '';
         requests.forEach((val, i) => {
             const maxVal = 2550;
             const pct = (val / maxVal) * 100;
             const isCurrent = i === 6;
+            const isWar = i === 2; // 2022
             const div = document.createElement('div');
+            let colorStyle = '';
+            let fillClass = '';
+            if (isCurrent) {
+                colorStyle = 'color:#fbbf24;';
+                fillClass = 'current';
+            } else if (isWar) {
+                colorStyle = 'color:#f87171;';
+                fillClass = 'war';
+            }
             div.innerHTML = `
-                <span style="min-width:45px; font-weight:700; font-size:clamp(0.7rem,2vw,0.9rem); ${isCurrent ? 'color:#fbbf24;' : ''}">${years[i]}</span>
-                <div class="stat-bar"><div class="stat-fill ${isCurrent ? 'current' : ''}" style="width:${pct}%"></div></div>
-                <span style="min-width:45px; text-align:right; font-size:clamp(0.7rem,2vw,0.9rem); ${isCurrent ? 'color:#fbbf24;' : ''}">${val}</span>
+                <span style="min-width:45px; font-weight:700; font-size:clamp(0.7rem,2vw,0.9rem); ${colorStyle}">${years[i]}</span>
+                <div class="stat-bar"><div class="stat-fill ${fillClass}" style="width:${pct}%"></div></div>
+                <span style="min-width:45px; text-align:right; font-size:clamp(0.7rem,2vw,0.9rem); ${colorStyle}">${val}</span>
             `;
             container.appendChild(div);
         });
