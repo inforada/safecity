@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Мережі · Повітряні мережі</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0c111d;
+            background-image: radial-gradient(circle at 15% 30%, #1a2a3f 0%, #0a0f1a 90%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            color: #eef4ff;
+        }
+
+        .dashboard-container {
+            max-width: 1000px;
+            width: 100%;
+            background: rgba(10, 20, 35, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 32px;
+            padding: 32px;
+            border: 1px solid rgba(64, 128, 255, 0.15);
+            box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+        }
+
+        .header-cam {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .title-block h1 {
+            font-size: clamp(1.3rem, 4vw, 2.4rem);
+            font-weight: 800;
+            background: linear-gradient(135deg, #b3e0ff, #7aaaff, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .title-block h1 i {
+            font-size: 0.9em;
+            color: #3b82f6;
+            -webkit-text-fill-color: #3b82f6;
+            text-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .title-tags {
+            display: flex;
+            gap: 8px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+
+        .title-tags span {
+            font-size: clamp(0.6rem, 1vw, 0.8rem);
+            padding: 3px 14px;
+            border-radius: 40px;
+            background: rgba(17, 51, 85, 0.5);
+            border: 1px solid rgba(34, 102, 170, 0.3);
+            color: #8fb7e0;
+        }
+
+        .title-tags .tag-yellow {
+            background: rgba(26, 58, 42, 0.5);
+            border-color: rgba(245, 158, 11, 0.3);
+            color: #fbbf24;
+        }
+
+        .badge-cam {
+            background: rgba(0, 200, 255, 0.08);
+            border: 1px solid rgba(0, 200, 255, 0.2);
+            border-radius: 60px;
+            padding: 6px 20px;
+            font-weight: 600;
+            font-size: clamp(0.7rem, 1.2vw, 0.95rem);
+            color: #a0e0ff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .years-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+
+        .year-card {
+            background: rgba(15, 25, 45, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 28px 24px;
+            border: 1px solid rgba(0, 160, 255, 0.15);
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .year-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .year-card.current {
+            border: 2px solid #fbbf24;
+            box-shadow: 0 0 50px rgba(251, 191, 36, 0.08);
+            background: rgba(30, 50, 70, 0.6);
+        }
+
+        .year-card.current .year-value {
+            background: linear-gradient(145deg, #fbbf24, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .year-card.current .year-label {
+            color: #fbbf24;
+        }
+
+        .year-card .badge-year {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: #fbbf24;
+            color: #0c111d;
+            font-size: 0.5rem;
+            font-weight: 700;
+            padding: 2px 12px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .year-value {
+            font-size: clamp(2rem, 4vw, 3.2rem);
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 4px;
+            background: linear-gradient(145deg, #ffffff, #b3d9ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .year-label {
+            font-size: clamp(0.8rem, 1.5vw, 1.1rem);
+            font-weight: 600;
+            color: #8fb7e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .year-label i {
+            font-size: 0.8rem;
+            color: #4a6a8a;
+        }
+
+        .year-desc {
+            font-size: clamp(0.65rem, 1vw, 0.8rem);
+            color: #6a8aa8;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px dashed rgba(42, 75, 112, 0.4);
+        }
+
+        .bottom-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 20px;
+        }
+
+        .detail-card {
+            background: rgba(15, 25, 45, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 24px 24px;
+            border: 1px solid rgba(0, 160, 255, 0.12);
+        }
+
+        .detail-card .detail-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #6a8aa8;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .detail-item .label {
+            font-size: clamp(0.75rem, 1.2vw, 0.9rem);
+            color: #b0c8e0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .detail-item .label .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .dot.blue { background: #3b82f6; box-shadow: 0 0 12px rgba(59, 130, 246, 0.3); }
+        .dot.yellow { background: #f59e0b; box-shadow: 0 0 12px rgba(245, 158, 11, 0.3); }
+        .dot.purple { background: #8a5cf6; box-shadow: 0 0 12px rgba(138, 92, 246, 0.3); }
+
+        .detail-item .value {
+            font-size: clamp(0.75rem, 1.2vw, 0.9rem);
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .detail-item .value.highlight {
+            color: #fbbf24;
+        }
+
+        .radial-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .radial-circle {
+            position: relative;
+            width: 170px;
+            height: 170px;
+        }
+
+        .radial-circle svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .radial-circle .bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.05);
+            stroke-width: 10;
+        }
+
+        .radial-circle .progress-blue {
+            fill: none;
+            stroke: #3b82f6;
+            stroke-width: 10;
+            stroke-linecap: round;
+            stroke-dasharray: 440;
+            stroke-dashoffset: 440;
+            transition: stroke-dashoffset 1.8s ease;
+        }
+
+        .radial-circle .progress-yellow {
+            fill: none;
+            stroke: #f59e0b;
+            stroke-width: 10;
+            stroke-linecap: round;
+            stroke-dasharray: 440;
+            stroke-dashoffset: 440;
+            transition: stroke-dashoffset 1.8s ease;
+        }
+
+        .radial-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .radial-center .big {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #fbbf24;
+            line-height: 1.2;
+        }
+
+        .radial-center .sub {
+            font-size: 0.75rem;
+            color: #8b9bb5;
+        }
+
+        .radial-center .total {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-top: 2px;
+        }
+
+        .radial-legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .radial-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.7rem;
+            color: #8b9bb5;
+        }
+
+        .radial-legend-item .color-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .color-dot.yellow { background: #f59e0b; }
+        .color-dot.blue { background: #3b82f6; }
+
+        @media (max-width: 900px) {
+            .years-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .bottom-grid {
+                grid-template-columns: 1fr;
+            }
+            .dashboard-container {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .header-cam {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .badge-cam {
+                width: 100%;
+                justify-content: center;
+                white-space: normal;
+                text-align: center;
+            }
+            .years-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            .year-card {
+                padding: 20px 16px;
+            }
+            .dashboard-container {
+                padding: 16px;
+                border-radius: 20px;
+            }
+            .radial-circle {
+                width: 140px;
+                height: 140px;
+            }
+            .radial-center .big {
+                font-size: 1.5rem;
+            }
+            .radial-legend {
+                gap: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .dashboard-container {
+                padding: 12px;
+            }
+            .year-value {
+                font-size: 2rem;
+            }
+            .detail-item {
+                padding: 8px 0;
+            }
+            .radial-circle {
+                width: 120px;
+                height: 120px;
+            }
+            .radial-center .big {
+                font-size: 1.2rem;
+            }
+            .radial-center .total {
+                font-size: 0.7rem;
+            }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .year-card, .detail-card {
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        .year-card:nth-child(1) { animation-delay: 0.05s; }
+        .year-card:nth-child(2) { animation-delay: 0.10s; }
+        .year-card:nth-child(3) { animation-delay: 0.15s; }
+        .detail-card { animation-delay: 0.20s; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-container">
+
+    <!-- HEADER -->
+    <div class="header-cam">
+        <div class="title-block">
+            <h1><i class="fas fa-network-wired"></i> Мережі — Повітряні мережі</h1>
+            <div class="title-tags">
+                <span><i class="fas fa-database"></i> архів 2025–2026</span>
+                <span><i class="fas fa-chart-line"></i> +17.5% з початку 2025</span>
+                <span class="tag-yellow"><i class="fas fa-calendar-alt"></i> 2026 триває</span>
+            </div>
+        </div>
+        <div class="badge-cam">
+            <i class="fas fa-circle" style="font-size: 0.6rem; color: #fbbf24;"></i>
+            586,608 км · загалом
+        </div>
+    </div>
+
+    <!-- ТРИ КАРТКИ -->
+    <div class="years-grid">
+        <div class="year-card">
+            <div class="year-value">499</div>
+            <div class="year-label"><i class="fas fa-calendar"></i> до 2025</div>
+            <div class="year-desc">Побудовано до 2025 року</div>
+        </div>
+
+        <div class="year-card">
+            <div class="year-value">67,055</div>
+            <div class="year-label"><i class="fas fa-calendar"></i> 2025 (за рік)</div>
+            <div class="year-desc">Додано за 2025 рік</div>
+        </div>
+
+        <div class="year-card current">
+            <span class="badge-year">● поточний</span>
+            <div class="year-value">20,553</div>
+            <div class="year-label"><i class="fas fa-calendar"></i> 2026 (01.07)</div>
+            <div class="year-desc" style="color:#fbbf24; border-top-color:rgba(251,191,36,0.2);">
+                <i class="fas fa-clock" style="color:#fbbf24;"></i> Додано за 2026 (станом на 01.07)
+            </div>
+        </div>
+    </div>
+
+    <!-- НИЖНІЙ БЛОК -->
+    <div class="bottom-grid">
+        <div class="detail-card">
+            <div class="detail-title"><i class="fas fa-chart-simple"></i> Підсумок</div>
+
+            <div class="detail-item">
+                <span class="label"><span class="dot blue"></span> До 2025 року</span>
+                <span class="value">499 км</span>
+            </div>
+
+            <div class="detail-item">
+                <span class="label"><span class="dot purple"></span> Додано за 2025</span>
+                <span class="value">+67,055 км</span>
+            </div>
+
+            <div class="detail-item">
+                <span class="label"><span class="dot yellow"></span> Додано за 2026 (01.07)</span>
+                <span class="value highlight">+20,553 км</span>
+            </div>
+
+            <div class="detail-item" style="border-bottom: none; padding-top: 14px; margin-top: 4px; border-top: 1px solid rgba(255,255,255,0.06);">
+                <span class="label" style="font-weight:700; color:#b0c8e0; font-size:1rem;">
+                    <i class="fas fa-calculator"></i> Загалом
+                </span>
+                <span class="value" style="font-size:1.3rem; font-weight:800; background:linear-gradient(145deg,#fff,#b3d9ff); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">586,608 км</span>
+            </div>
+        </div>
+
+        <!-- КРУГОВА ДІАГРАМА -->
+        <div class="detail-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
+            <div class="radial-wrapper">
+                <div class="radial-circle">
+                    <svg viewBox="0 0 150 150">
+                        <!-- Фонове коло -->
+                        <circle class="bg" cx="75" cy="75" r="70"/>
+                        <!-- Синій сегмент (до 2025 + 2025) -->
+                        <circle class="progress-blue" cx="75" cy="75" r="70"
+                                stroke-dasharray="440"
+                                stroke-dashoffset="440"/>
+                        <!-- Жовтий сегмент (2026) -->
+                        <circle class="progress-yellow" cx="75" cy="75" r="70"
+                                stroke-dasharray="440"
+                                stroke-dashoffset="440"/>
+                    </svg>
+                    <div class="radial-center">
+                        <div class="big">586,608</div>
+                        <div class="sub">км загалом</div>
+                        <div class="total">20,553 км · 2026</div>
+                    </div>
+                </div>
+
+                <div class="radial-legend">
+                    <span class="radial-legend-item">
+                        <span class="color-dot blue"></span>
+                        До 2025 + 2025
+                    </span>
+                    <span class="radial-legend-item">
+                        <span class="color-dot yellow"></span>
+                        2026 (20,553 км)
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const progressBlue = document.querySelector('.radial-circle .progress-blue');
+        const progressYellow = document.querySelector('.radial-circle .progress-yellow');
+
+        if (progressBlue && progressYellow) {
+            const circumference = 440;
+            const before2026 = 566.055;
+            const current2026 = 20.553;
+            const total = before2026 + current2026;
+
+            const pctBefore = (before2026 / total) * 100;
+            const pctCurrent = (current2026 / total) * 100;
+
+            const offsetBefore = circumference - (pctBefore / 100) * circumference;
+            const offsetCurrent = circumference - (pctCurrent / 100) * circumference;
+
+            setTimeout(() => {
+                progressBlue.style.strokeDashoffset = offsetBefore;
+                progressYellow.style.strokeDashoffset = offsetCurrent;
+            }, 400);
+        }
+    });
+</script>
+
+</body>
+</html>
