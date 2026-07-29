@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>CamViz · Камери Дніпра</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: #0c111d;
+            background-image: radial-gradient(circle at 15% 30%, #1a2a3f 0%, #0a0f1a 90%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            color: #eef4ff;
+        }
+
+        .dashboard-container {
+            max-width: 1200px;
+            width: 100%;
+            background: rgba(10, 20, 35, 0.5);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: clamp(24px, 5vw, 48px);
+            padding: clamp(20px, 4vw, 36px);
+            border: 1px solid rgba(64, 128, 255, 0.2);
+            box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(0, 255, 255, 0.05) inset;
+        }
+
+        .header-cam {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .title-block h1 {
+            font-size: clamp(1.3rem, 4vw, 2.4rem);
+            font-weight: 700;
+            background: linear-gradient(135deg, #b3e0ff, #7aaaff, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .title-block h1 i {
+            font-size: 0.9em;
+            color: #3b82f6;
+            -webkit-text-fill-color: #3b82f6;
+            text-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .title-tags {
+            display: flex;
+            gap: 8px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+
+        .title-tags span {
+            font-size: clamp(0.6rem, 1vw, 0.8rem);
+            padding: 3px 14px;
+            border-radius: 40px;
+            background: rgba(17, 51, 85, 0.5);
+            border: 1px solid rgba(34, 102, 170, 0.3);
+            color: #8fb7e0;
+        }
+
+        .title-tags .tag-yellow {
+            background: rgba(26, 58, 42, 0.5);
+            border-color: rgba(245, 158, 11, 0.3);
+            color: #fbbf24;
+        }
+
+        .badge-cam {
+            background: rgba(0, 200, 255, 0.08);
+            border: 1px solid rgba(0, 200, 255, 0.2);
+            border-radius: 60px;
+            padding: 6px 20px;
+            font-weight: 700;
+            font-size: clamp(1rem, 1.8vw, 1.4rem);
+            color: #fbbf24;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .badge-cam i {
+            color: #fbbf24;
+            font-size: 0.6rem;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            gap: 20px;
+        }
+
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .chart-card {
+            background: rgba(15, 25, 45, 0.5);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 20px 22px;
+            border: 1px solid rgba(0, 160, 255, 0.08);
+        }
+
+        .chart-card .chart-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #6a8aa8;
+            font-weight: 600;
+            margin-bottom: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chart-card .chart-title .badge-chart {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.15);
+            border-radius: 40px;
+            padding: 2px 14px;
+            font-size: 0.6rem;
+            color: #6a8aa8;
+            font-weight: 500;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 220px;
+            width: 100%;
+        }
+
+        .chart-wrapper canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .right-card {
+            background: rgba(15, 25, 45, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 20px 22px;
+            border: 1px solid rgba(0, 160, 255, 0.08);
+        }
+
+        .right-card .card-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #6a8aa8;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .object-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .object-item:last-child { border-bottom: none; }
+
+        .object-item .name {
+            font-size: clamp(0.75rem, 1.2vw, 0.9rem);
+            color: #c8d8e8;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .object-item .name .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .object-item .count {
+            font-size: clamp(0.75rem, 1.2vw, 0.9rem);
+            font-weight: 700;
+            color: #ffffff;
+            background: rgba(59, 130, 246, 0.08);
+            padding: 2px 14px;
+            border-radius: 20px;
+            min-width: 40px;
+            text-align: center;
+            border: 1px solid rgba(59, 130, 246, 0.05);
+        }
+
+        .object-item .count.highlight {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+        }
+
+        /* РАЙОНИ З РІЗНИМИ КОЛЬОРАМИ */
+        .district-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+        }
+
+        .district-item .d-name {
+            font-size: clamp(0.65rem, 1vw, 0.8rem);
+            color: #b0c8e0;
+            min-width: 70px;
+        }
+
+        .district-item .d-bar {
+            flex: 1;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            margin: 0 10px;
+            overflow: hidden;
+        }
+
+        .district-item .d-bar .d-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 1.2s ease;
+        }
+
+        .district-item .d-count {
+            font-size: clamp(0.65rem, 1vw, 0.8rem);
+            font-weight: 600;
+            color: #ffffff;
+            min-width: 32px;
+            text-align: right;
+        }
+
+        .district-item .d-count.yellow { color: #fbbf24; }
+
+        .pie-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 320px;
+            margin: 0 auto;
+            aspect-ratio: 1/1;
+        }
+
+        .pie-wrapper canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        @media (max-width: 1000px) {
+            .main-grid { grid-template-columns: 1fr; }
+            .chart-wrapper { height: 200px; }
+            .pie-wrapper { max-width: 280px; }
+        }
+
+        @media (max-width: 700px) {
+            .header-cam {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .badge-cam {
+                width: 100%;
+                justify-content: center;
+                white-space: normal;
+                text-align: center;
+                font-size: 1.2rem;
+            }
+            .dashboard-container { padding: 16px; border-radius: 20px; }
+            .chart-wrapper { height: 170px; }
+            .pie-wrapper { max-width: 240px; }
+        }
+
+        @media (max-width: 480px) {
+            .dashboard-container { padding: 12px; }
+            .chart-card, .right-card { padding: 14px 16px; }
+            .chart-wrapper { height: 150px; }
+            .district-item .d-bar { margin: 0 6px; }
+            .district-item .d-name { min-width: 50px; font-size: 0.6rem; }
+            .district-item .d-count { font-size: 0.6rem; min-width: 28px; }
+            .pie-wrapper { max-width: 200px; }
+            .badge-cam { font-size: 1rem; padding: 4px 14px; }
+            .object-item .name { font-size: 0.7rem; }
+            .object-item .count { font-size: 0.7rem; padding: 2px 10px; min-width: 32px; }
+        }
+
+        @media (max-width: 380px) {
+            .pie-wrapper { max-width: 160px; }
+            .chart-wrapper { height: 130px; }
+            .badge-cam { font-size: 0.85rem; }
+            .district-item .d-name { min-width: 40px; font-size: 0.55rem; }
+            .district-item .d-bar { margin: 0 4px; }
+            .district-item .d-count { font-size: 0.55rem; min-width: 24px; }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .chart-card, .right-card {
+            animation: fadeInUp 0.5s ease forwards;
+        }
+        .chart-card { animation-delay: 0.05s; }
+        .right-card { animation-delay: 0.10s; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-container">
+
+    <!-- HEADER -->
+    <div class="header-cam">
+        <div class="title-block">
+            <h1><i class="fas fa-video"></i> CamViz · Камери Дніпра</h1>
+            <div class="title-tags">
+                <span><i class="fas fa-database"></i> станом на 2026</span>
+                <span><i class="fas fa-map-marked-alt"></i> 8 районів</span>
+                <span class="tag-yellow"><i class="fas fa-circle"></i> 2 886 камер</span>
+            </div>
+        </div>
+        <div class="badge-cam">
+            <i class="fas fa-circle"></i> 2 886
+        </div>
+    </div>
+
+    <!-- ОСНОВНА СІТКА -->
+    <div class="main-grid">
+
+        <!-- ЛІВА КОЛОНКА -->
+        <div class="left-panel">
+
+            <!-- ГРАФІК — ОСНОВНА ДІАГРАМА (ВСІ СТОВПЧИКИ ОДНОГО КОЛЬОРУ) -->
+            <div class="chart-card">
+                <div class="chart-title">
+                    <span><i class="fas fa-chart-bar"></i> Камери по районах</span>
+                    <span class="badge-chart">горизонтальна діаграма</span>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="camerasChart"></canvas>
+                </div>
+            </div>
+
+            <!-- КРУГОВА ДІАГРАМА -->
+            <div class="right-card" style="border-color:rgba(59,130,246,0.08);">
+                <div class="card-title"><i class="fas fa-chart-pie"></i> Розподіл по об'єктах</div>
+                <div class="pie-wrapper">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ПРАВА КОЛОНКА -->
+        <div class="right-panel">
+
+            <!-- ВСІ РАЙОНИ З РІЗНИМИ КОЛЬОРАМИ -->
+            <div class="right-card">
+                <div class="card-title"><i class="fas fa-list"></i> Всі райони</div>
+
+                <div class="district-item">
+                    <span class="d-name">Шевченківський</span>
+                    <div class="d-bar"><div class="d-fill" style="width:100%; background:#8b5cf6;"></div></div>
+                    <span class="d-count yellow">312</span>
+                </div>
+
+                <div class="district-item">
+                    <span class="d-name">Новокодацький</span>
+                    <div class="d-bar"><div class="d-fill" style="width:98%; background:#ef4444;"></div></div>
+                    <span class="d-count yellow">307</span>
+                </div>
+
+                <div class="district-item">
+                    <span class="d-name">Центральний</span>
+                    <div class="d-bar"><div class="d-fill" style="width:80%; background:#3b82f6;"></div></div>
+                    <span class="d-count">251</span>
+                </div>
+
+                <div class="district-item">
+                    <span class="d-name">Соборний</span>
+                    <div class="d-bar"><div class="d-fill" style="width:74%; background:#22c55e;"></div></div>
+                    <span class="d-count">231</span>
+                </div>
+
+                <div class="district-item">
+                    <span class="d-name">Амур-Нижньодніпровський</span>
+                    <div class="d-bar"><div class="d-fill" style="width:62%; background:#f59e0b;"></div></div>
+                    <span class="d-count">194</span>
+                </div>
+
+                <div class="district-item">
+                    <span class="d-name">Індустріальний</span>
+                    <div class="d-bar"><div class="d-fill" style="width:50%; background:#ec4899;"></div></div>
+                    <span class="d-count">156</span>
+                </div>
+
+                <div class="district-item">
+                    <span class="d-name">Чечелівський</span>
+                    <div class="d-bar"><div class="d-fill" style="width:37%; background:#06b6d4;"></div></div>
+                    <span class="d-count">115</span>
+                </div>
+
+                <div class="district-item">
+                    <span class="d-name">Самарський</span>
+                    <div class="d-bar"><div class="d-fill" style="width:13%; background:#a855f7;"></div></div>
+                    <span class="d-count">39</span>
+                </div>
+            </div>
+
+            <!-- ОБ'ЄКТИ -->
+            <div class="right-card" style="border-color:rgba(245,158,11,0.08);">
+                <div class="card-title"><i class="fas fa-cubes"></i> Деталізація об'єктів</div>
+
+                <div class="object-item">
+                    <span class="name"><span class="dot" style="background:#f59e0b;"></span>ОСББ</span>
+                    <span class="count highlight">159</span>
+                </div>
+                <div class="object-item">
+                    <span class="name"><span class="dot" style="background:#22c55e;"></span>Парки, Сквери</span>
+                    <span class="count">151</span>
+                </div>
+                <div class="object-item">
+                    <span class="name"><span class="dot" style="background:#8b5cf6;"></span>Площі</span>
+                    <span class="count">72</span>
+                </div>
+                <div class="object-item">
+                    <span class="name"><span class="dot" style="background:#3b82f6;"></span>Бульвари</span>
+                    <span class="count">10</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+        // ========== ГОРИЗОНТАЛЬНА ДІАГРАМА (ВСІ СТОВПЧИКИ ОДНОГО КОЛЬОРУ) ==========
+        const ctx = document.getElementById('camerasChart').getContext('2d');
+
+        const districts = [
+            'Шевченківський',
+            'Новокодацький',
+            'Центральний',
+            'Соборний',
+            'Амур-Нижньодніпровський',
+            'Індустріальний',
+            'Чечелівський',
+            'Самарський'
+        ];
+
+        const cameras = [312, 307, 251, 231, 194, 156, 115, 39];
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: districts,
+                datasets: [{
+                    data: cameras,
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 6,
+                    barPercentage: 0.55,
+                    hoverBackgroundColor: '#60a5fa'
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(22,27,34,0.95)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#b0c8e0',
+                        borderColor: 'rgba(255,255,255,0.08)',
+                        borderWidth: 1,
+                        padding: 10,
+                        cornerRadius: 10,
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.x + ' камер';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false },
+                        ticks: {
+                            color: '#6a8aa8',
+                            font: { size: window.innerWidth < 500 ? 8 : 10 },
+                            stepSize: 50
+                        }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: {
+                            color: '#8b9bb5',
+                            font: { size: window.innerWidth < 500 ? 8 : 11 }
+                        }
+                    }
+                }
+            }
+        });
+
+        // ========== КРУГОВА ДІАГРАМА ==========
+        const pieCtx = document.getElementById('pieChart').getContext('2d');
+
+        const objectLabels = ['ОСББ', 'Парки, Сквери', 'Площі', 'Бульвари'];
+        const objectValues = [159, 151, 72, 10];
+        const pieColors = ['#f59e0b', '#22c55e', '#8b5cf6', '#3b82f6'];
+
+        new Chart(pieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: objectLabels,
+                datasets: [{
+                    data: objectValues,
+                    backgroundColor: pieColors,
+                    borderColor: 'rgba(12,17,29,0.8)',
+                    borderWidth: 3,
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#8b9bb5',
+                            font: {
+                                size: window.innerWidth < 500 ? 8 : 10,
+                                family: 'Space Grotesk'
+                            },
+                            padding: 10,
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            boxWidth: 8
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(22,27,34,0.95)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#b0c8e0',
+                        borderColor: 'rgba(255,255,255,0.08)',
+                        borderWidth: 1,
+                        padding: 10,
+                        cornerRadius: 10,
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return context.label + ': ' + context.parsed + ' камер (' + percentage + '%)';
+                            }
+                        }
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+
+        window.addEventListener('resize', function() {
+            const isSmall = window.innerWidth < 500;
+            const pieChart = Chart.getChart('pieChart');
+            if (pieChart) {
+                pieChart.options.plugins.legend.labels.font.size = isSmall ? 8 : 10;
+                pieChart.update();
+            }
+        });
+
+    });
+</script>
+
+</body>
+</html>
