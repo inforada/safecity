@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>CamViz · запити на відео</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
@@ -93,7 +94,7 @@
 
         .year-stats {
             display: grid;
-            grid-template-columns: repeat(7, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
             gap: clamp(8px, 2vw, 18px);
             margin-bottom: clamp(25px, 5vw, 50px);
         }
@@ -136,6 +137,11 @@
             text-transform: uppercase;
         }
 
+        .year-card.year-war {
+            border: 2px solid #dc2626;
+            background: rgba(40, 10, 10, 0.5);
+        }
+
         .year-card.year-current .year-value {
             background: linear-gradient(145deg, #fbbf24, #f59e0b);
             -webkit-background-clip: text;
@@ -145,6 +151,12 @@
         .year-card.year-current .year-label {
             color: #fbbf24;
             border-top-color: #fbbf2440;
+        }
+
+        .year-card.year-war .year-value {
+            background: linear-gradient(145deg, #f87171, #dc2626);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .year-value {
@@ -274,7 +286,6 @@
             box-shadow: 0 0 15px #fbbf24;
         }
 
-        /* Стиль для червоного кольору війни */
         .stat-fill.war {
             background: linear-gradient(90deg, #dc2626, #991b1b);
             box-shadow: 0 0 15px #dc262660;
@@ -342,10 +353,26 @@
             color: #d4a0a0;
         }
 
-        @media (max-width: 1100px) {
-            .year-stats {
-                grid-template-columns: repeat(4, 1fr);
-            }
+        .status-message {
+            text-align: center;
+            padding: 60px 20px;
+            font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+            color: #8fb7e0;
+        }
+
+        .status-message.error {
+            color: #f87171;
+        }
+
+        .status-message code {
+            background: #152f4a;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 0.85em;
+        }
+
+        .hidden {
+            display: none !important;
         }
 
         @media (max-width: 900px) {
@@ -371,15 +398,9 @@
                 white-space: normal;
                 text-align: center;
             }
-            .year-stats {
-                grid-template-columns: repeat(3, 1fr);
-            }
         }
 
         @media (max-width: 600px) {
-            .year-stats {
-                grid-template-columns: repeat(2, 1fr);
-            }
             .chart-wrapper {
                 padding-bottom: 50%;
             }
@@ -389,10 +410,6 @@
         }
 
         @media (max-width: 450px) {
-            .year-stats {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 8px;
-            }
             .year-card {
                 padding: 10px 5px;
             }
@@ -460,37 +477,36 @@
     </style>
 </head>
 <body>
-<div class="camera-dashboard">
+
+<div id="statusScreen" class="camera-dashboard">
+    <div class="status-message" id="statusText">
+        <i class="fas fa-spinner fa-spin"></i> Завантаження даних з Google Таблиці...
+    </div>
+</div>
+
+<div class="camera-dashboard hidden" id="dashboard">
 
     <div class="header-cam">
         <div class="title-block">
             <h1><i class="fas fa-video"></i> Звернення до Ситуаційного центру</h1>
-            <div>
-                <span style="background: #113355; border-radius: 40px; border:1px solid #2266aa;"><i class="fas fa-database"></i> архів 2020–2026</span>
-                <span style="background: #113355; border-radius: 40px; border:1px solid #aa22aa;"><i class="fas fa-chart-line"></i> +288% з 2020</span>
-                <span style="background: #1a3a2a; border-radius: 40px; border:1px solid #fbbf24; color: #fbbf24;"><i class="fas fa-calendar-alt"></i> 2026 триває</span>
+            <div id="headerBadges">
+                <!-- заповнюється скриптом -->
             </div>
         </div>
-        <div class="badge-cam">
-            <i class="fas fa-circle" style="font-size: 0.7rem; color: #fbbf24;"></i> 1715 запитів · 2026
+        <div class="badge-cam" id="topBadge">
+            <i class="fas fa-circle" style="font-size: 0.7rem; color: #fbbf24;"></i> <span id="topBadgeText"></span>
         </div>
     </div>
 
-    <div class="year-stats">
-        <div class="year-card"><div class="year-value" data-target="657">0</div><div class="year-label"><i class="fas fa-calendar"></i>2020</div></div>
-        <div class="year-card"><div class="year-value" data-target="1303">0</div><div class="year-label"><i class="fas fa-calendar"></i>2021</div></div>
-        <div class="year-card"><div class="year-value" data-target="901">0</div><div class="year-label"><i class="fas fa-calendar"></i>2022</div></div>
-        <div class="year-card"><div class="year-value" data-target="1558">0</div><div class="year-label"><i class="fas fa-calendar"></i>2023</div></div>
-        <div class="year-card"><div class="year-value" data-target="2092">0</div><div class="year-label"><i class="fas fa-calendar"></i>2024</div></div>
-        <div class="year-card"><div class="year-value" data-target="2550">0</div><div class="year-label"><i class="fas fa-calendar"></i>2025</div></div>
-        <div class="year-card year-current"><div class="year-value" data-target="1715">0</div><div class="year-label"><i class="fas fa-calendar"></i>2026</div></div>
+    <div class="year-stats" id="yearStats">
+        <!-- заповнюється скриптом -->
     </div>
 
     <div class="insight-panel">
         <div class="chart-area">
             <div class="chart-header">
                 <h3><i class="fas fa-chart-bar" style="background:#1e3b5a; padding:8px; border-radius:16px; color:#38bdf8;"></i> Динаміка запитів</h3>
-                <span style="background:#1e3a5f; border-radius:60px; padding:6px 16px; color:#9ac8ff; border:1px solid #3482cc; font-size:clamp(0.7rem,2vw,0.9rem);">CAGR +31%</span>
+                <span style="background:#1e3a5f; border-radius:60px; padding:6px 16px; color:#9ac8ff; border:1px solid #3482cc; font-size:clamp(0.7rem,2vw,0.9rem);" id="cagrBadge"></span>
             </div>
             <div class="chart-wrapper">
                 <canvas id="videoRequestsChart"></canvas>
@@ -500,57 +516,117 @@
         <div class="stats-breakdown">
             <div class="total-requests">
                 <div style="color:#88b9e6; text-transform:uppercase; letter-spacing:1px; font-size: clamp(0.7rem,2vw,0.9rem);">загальна кількість</div>
-                <div class="total-number">10 776</div>
-                <div style="color:#b0d4f0; font-size:clamp(0.7rem,2vw,0.9rem);"><i class="fas fa-arrow-up" style="color:#10b981;"></i> +288% vs 2020</div>
+                <div class="total-number" id="totalNumber">0</div>
+                <div style="color:#b0d4f0; font-size:clamp(0.7rem,2vw,0.9rem);" id="totalGrowth"></div>
             </div>
             <div id="statBars"></div>
-            <div style="background:#0f1e30; border-radius: 24px; padding: 16px; border:1px solid #fbbf2460;">
-                <div style="display: flex; justify-content: space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-                    <span style="font-size:clamp(0.7rem,2vw,0.9rem);"><i class="fas fa-calendar-check" style="color:#fbbf24;"></i> 2026 (поточний)</span>
-                    <span style="font-weight:700; font-size: clamp(1.2rem,4vw,1.6rem); color: #fbbf24;">1715</span>
-                </div>
-                <div style="height: 6px; background:#1b3a5c; border-radius:10px; margin-top:10px;">
-                    <div style="width:67%; height:6px; background: linear-gradient(90deg,#fbbf24,#f59e0b); border-radius:10px; box-shadow: 0 0 15px #fbbf2460;"></div>
-                </div>
-                <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:#6a8aa8; margin-top:4px;">
-                    <span>станом на 04.08.2026</span>
-                    <span>67% від 2025</span>
-                </div>
+            <div style="background:#0f1e30; border-radius: 24px; padding: 16px; border:1px solid #fbbf2460;" id="currentBox">
+                <!-- заповнюється скриптом -->
             </div>
         </div>
     </div>
 
-    <div class="feature-footer">
-        <!-- Картка про війну (замість "Піковий рік") -->
-        <div class="insight-card war-card">
-            <div class="icon-large war-icon"><i class="fas fa-shield-halved"></i></div>
-            <div>
-                <h4>Війна · 2022</h4>
-                <p>Падіння на 30% · 901 запит</p>
-                <p style="font-size:0.75rem; color:#b08080; margin-top:4px;"><i class="fas fa-arrow-down" style="color:#dc2626;"></i> найнижчий показник за 6 років</p>
-            </div>
-        </div>
-        <!-- Друга картка залишається про 2026 -->
-        <div class="insight-card" style="border-color: #fbbf2450;">
-            <div class="icon-large" style="border-color: #fbbf24; color: #fbbf24;"><i class="fas fa-clock"></i></div>
-            <div>
-                <h4 style="color: #fbbf24;">2026 триває</h4>
-                <p>1715 запитів</p>
-            </div>
-        </div>
+    <div class="feature-footer" id="featureFooter">
+        <!-- заповнюється скриптом -->
     </div>
 </div>
 
 <script>
-    (function() {
-        const years = ['2020', '2021', '2022', '2023', '2024', '2025', '2026'];
-        const requests = [657, 1303, 901, 1558, 2092, 2550, 1715];
+(function() {
+    // ==========================================================
+    // НАЛАШТУВАННЯ: вставте сюди ID вашої Google Таблиці
+    // ID береться з адресного рядка: .../spreadsheets/d/ЦЕЙ_ID/edit
+    // Таблиця має бути відкрита на перегляд ("Усі, у кого є посилання")
+    // ==========================================================
+    const SHEET_ID = '1M6yCm3g18A7zxMt5H5rgGcav0EYm2FQ3G1wewkj6Jqk';
+    const SHEET_NAME = 'Аркуш1'; // назва листа з колонками Year, Requests, Highlight, Note
+
+    const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
+
+    const statusScreen = document.getElementById('statusScreen');
+    const statusText = document.getElementById('statusText');
+    const dashboard = document.getElementById('dashboard');
+
+    function showError(msg) {
+        statusText.innerHTML = `<i class="fas fa-triangle-exclamation"></i> ${msg}`;
+        statusScreen.querySelector('.status-message').classList.add('error');
+    }
+
+    if (!SHEET_ID || SHEET_ID.indexOf('ВСТАВТЕ') === 0) {
+        showError('Вкажіть SHEET_ID у коді сторінки (на початку тега &lt;script&gt;), щоб підʼєднати вашу Google Таблицю.');
+        return;
+    }
+
+    fetch(CSV_URL)
+        .then(res => {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.text();
+        })
+        .then(csvText => {
+            const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+            const rows = parsed.data
+                .map(r => ({
+                    year: (r.Year || '').toString().trim(),
+                    requests: Number((r.Requests || '0').toString().replace(/\s/g, '').replace(',', '.')) || 0,
+                    highlight: (r.Highlight || '').toString().trim().toLowerCase(),
+                    note: (r.Note || '').toString().trim()
+                }))
+                .filter(r => r.year !== '')
+                .sort((a, b) => a.year.localeCompare(b.year, undefined, {numeric: true}));
+
+            if (rows.length === 0) {
+                showError('У таблиці не знайдено рядків з даними. Перевірте назви колонок: Year, Requests, Highlight, Note.');
+                return;
+            }
+
+            renderDashboard(rows);
+            statusScreen.classList.add('hidden');
+            dashboard.classList.remove('hidden');
+        })
+        .catch(err => {
+            showError('Не вдалося завантажити таблицю. Перевірте, що доступ відкрито "Усім, у кого є посилання" і що SHEET_ID та назва листа вказані вірно. (' + err.message + ')');
+        });
+
+    function renderDashboard(rows) {
+        const years = rows.map(r => r.year);
+        const requests = rows.map(r => r.requests);
+
+        // Автовизначення поточного року, якщо не вказано вручну
+        let currentIdx = rows.findIndex(r => r.highlight === 'current');
+        if (currentIdx === -1) currentIdx = rows.length - 1;
+
+        const warIdx = rows.findIndex(r => r.highlight === 'war' || r.highlight === 'alert');
+
+        const total = requests.reduce((a, b) => a + b, 0);
+        const first = requests[0];
+        const last = requests[requests.length - 1];
+        const growthPct = first > 0 ? Math.round(((last - first) / first) * 100) : 0;
+        const n = requests.length;
+        const cagr = (first > 0 && n > 1) ? (Math.pow(last / first, 1 / (n - 1)) - 1) * 100 : 0;
+
+        // Заголовок / бейджі
+        document.getElementById('headerBadges').innerHTML = `
+            <span style="background: #113355; border-radius: 40px; border:1px solid #2266aa;"><i class="fas fa-database"></i> архів ${years[0]}–${years[years.length-1]}</span>
+            <span style="background: #113355; border-radius: 40px; border:1px solid #aa22aa;"><i class="fas fa-chart-line"></i> ${growthPct >= 0 ? '+' : ''}${growthPct}% з ${years[0]}</span>
+            <span style="background: #1a3a2a; border-radius: 40px; border:1px solid #fbbf24; color: #fbbf24;"><i class="fas fa-calendar-alt"></i> ${years[currentIdx]} триває</span>
+        `;
+        document.getElementById('topBadgeText').textContent = `${requests[currentIdx]} запитів · ${years[currentIdx]}`;
+
+        // Картки по роках
+        const yearStatsEl = document.getElementById('yearStats');
+        yearStatsEl.innerHTML = rows.map((r, i) => {
+            let cls = 'year-card';
+            let badge = '';
+            if (i === currentIdx) { cls += ' year-current'; }
+            else if (i === warIdx) { cls += ' year-war'; }
+            return `<div class="${cls}"><div class="year-value">${r.requests}</div><div class="year-label"><i class="fas fa-calendar"></i>${r.year}</div></div>`;
+        }).join('');
 
         // Анімація чисел
-        document.querySelectorAll('.year-value').forEach(el => {
-            const target = +el.getAttribute('data-target');
+        yearStatsEl.querySelectorAll('.year-value').forEach((el, i) => {
+            const target = requests[i];
             let count = 0;
-            const step = Math.ceil(target / 50);
+            const step = Math.max(1, Math.ceil(target / 50));
             const update = () => {
                 count += step;
                 if (count < target) {
@@ -563,7 +639,70 @@
             update();
         });
 
-        // Графік з адаптивними розмірами шрифтів
+        document.getElementById('cagrBadge').textContent = `CAGR ${cagr >= 0 ? '+' : ''}${cagr.toFixed(0)}%`;
+        document.getElementById('totalNumber').textContent = total.toLocaleString('uk-UA');
+        document.getElementById('totalGrowth').innerHTML = `<i class="fas fa-arrow-${growthPct >= 0 ? 'up' : 'down'}" style="color:${growthPct >= 0 ? '#10b981' : '#dc2626'};"></i> ${growthPct >= 0 ? '+' : ''}${growthPct}% vs ${years[0]}`;
+
+        // Блок "поточний рік"
+        const prevVal = currentIdx > 0 ? requests[currentIdx - 1] : null;
+        const pctOfPrev = prevVal ? Math.round((requests[currentIdx] / prevVal) * 100) : null;
+        const today = new Date().toLocaleDateString('uk-UA');
+        document.getElementById('currentBox').innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+                <span style="font-size:clamp(0.7rem,2vw,0.9rem);"><i class="fas fa-calendar-check" style="color:#fbbf24;"></i> ${years[currentIdx]} (поточний)</span>
+                <span style="font-weight:700; font-size: clamp(1.2rem,4vw,1.6rem); color: #fbbf24;">${requests[currentIdx]}</span>
+            </div>
+            <div style="height: 6px; background:#1b3a5c; border-radius:10px; margin-top:10px;">
+                <div style="width:${pctOfPrev ? Math.min(pctOfPrev, 100) : 100}%; height:6px; background: linear-gradient(90deg,#fbbf24,#f59e0b); border-radius:10px; box-shadow: 0 0 15px #fbbf2460;"></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:#6a8aa8; margin-top:4px;">
+                <span>станом на ${today}</span>
+                ${pctOfPrev ? `<span>${pctOfPrev}% від ${years[currentIdx - 1]}</span>` : ''}
+            </div>
+        `;
+
+        // Прогрес-бари
+        const maxVal = Math.max(...requests);
+        const container = document.getElementById('statBars');
+        container.innerHTML = rows.map((r, i) => {
+            const pct = maxVal > 0 ? (r.requests / maxVal) * 100 : 0;
+            let colorStyle = '';
+            let fillClass = '';
+            if (i === currentIdx) { colorStyle = 'color:#fbbf24;'; fillClass = 'current'; }
+            else if (i === warIdx) { colorStyle = 'color:#f87171;'; fillClass = 'war'; }
+            return `
+                <div>
+                    <span style="min-width:45px; font-weight:700; font-size:clamp(0.7rem,2vw,0.9rem); ${colorStyle}">${r.year}</span>
+                    <div class="stat-bar"><div class="stat-fill ${fillClass}" style="width:${pct}%"></div></div>
+                    <span style="min-width:45px; text-align:right; font-size:clamp(0.7rem,2vw,0.9rem); ${colorStyle}">${r.requests}</span>
+                </div>`;
+        }).join('');
+
+        // Нижні картки-інсайти
+        const footerCards = [];
+        if (warIdx !== -1) {
+            const r = rows[warIdx];
+            footerCards.push(`
+                <div class="insight-card war-card">
+                    <div class="icon-large war-icon"><i class="fas fa-shield-halved"></i></div>
+                    <div>
+                        <h4>${r.note ? r.note.split('·')[0].trim() : 'Провал'} · ${r.year}</h4>
+                        <p>${r.requests} запитів</p>
+                        ${r.note ? `<p style="font-size:0.75rem; color:#b08080; margin-top:4px;">${r.note}</p>` : ''}
+                    </div>
+                </div>`);
+        }
+        footerCards.push(`
+            <div class="insight-card" style="border-color: #fbbf2450;">
+                <div class="icon-large" style="border-color: #fbbf24; color: #fbbf24;"><i class="fas fa-clock"></i></div>
+                <div>
+                    <h4 style="color: #fbbf24;">${years[currentIdx]} триває</h4>
+                    <p>${requests[currentIdx]} запитів</p>
+                </div>
+            </div>`);
+        document.getElementById('featureFooter').innerHTML = footerCards.join('');
+
+        // Графік
         const ctx = document.getElementById('videoRequestsChart').getContext('2d');
         const chart = new Chart(ctx, {
             type: 'bar',
@@ -571,7 +710,7 @@
                 labels: years,
                 datasets: [{
                     data: requests,
-                    backgroundColor: ['#3b82f6', '#3b82f6', '#dc2626', '#3b82f6', '#3b82f6', '#3b82f6', '#fbbf24'],
+                    backgroundColor: rows.map((r, i) => i === currentIdx ? '#fbbf24' : (i === warIdx ? '#dc2626' : '#3b82f6')),
                     borderRadius: 8,
                     barPercentage: 0.6
                 }]
@@ -579,72 +718,36 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { 
+                plugins: {
                     legend: { display: false },
-                    tooltip: { 
+                    tooltip: {
                         backgroundColor: '#1e3347',
                         callbacks: {
-                            label: function(context) {
-                                return context.parsed.y + ' запитів';
-                            }
+                            label: function(context) { return context.parsed.y + ' запитів'; }
                         }
                     }
                 },
                 scales: {
-                    y: { 
-                        grid: { color: '#1f405e' }, 
-                        ticks: { 
-                            color: '#9bc9ff',
-                            font: { size: window.innerWidth < 500 ? 8 : 10 }
-                        }
+                    y: {
+                        grid: { color: '#1f405e' },
+                        ticks: { color: '#9bc9ff', font: { size: window.innerWidth < 500 ? 8 : 10 } }
                     },
-                    x: { 
-                        grid: { display: false }, 
-                        ticks: { 
-                            color: '#b3d6ff',
-                            font: { size: window.innerWidth < 500 ? 8 : 10 },
-                            maxRotation: 45,
-                            minRotation: 30
-                        }
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#b3d6ff', font: { size: window.innerWidth < 500 ? 8 : 10 }, maxRotation: 45, minRotation: 30 }
                     }
                 }
             }
         });
 
-        // Оновлення розміру шрифтів графіка при ресайзі
         window.addEventListener('resize', () => {
             const fontSize = window.innerWidth < 500 ? 8 : 10;
             chart.options.scales.y.ticks.font = { size: fontSize };
             chart.options.scales.x.ticks.font = { size: fontSize };
             chart.update();
         });
-
-        // Прогрес-бари з виділенням 2022 (війна) та 2026 (поточний)
-        const container = document.getElementById('statBars');
-        container.innerHTML = '';
-        requests.forEach((val, i) => {
-            const maxVal = 2550;
-            const pct = (val / maxVal) * 100;
-            const isCurrent = i === 6;
-            const isWar = i === 2; // 2022
-            const div = document.createElement('div');
-            let colorStyle = '';
-            let fillClass = '';
-            if (isCurrent) {
-                colorStyle = 'color:#fbbf24;';
-                fillClass = 'current';
-            } else if (isWar) {
-                colorStyle = 'color:#f87171;';
-                fillClass = 'war';
-            }
-            div.innerHTML = `
-                <span style="min-width:45px; font-weight:700; font-size:clamp(0.7rem,2vw,0.9rem); ${colorStyle}">${years[i]}</span>
-                <div class="stat-bar"><div class="stat-fill ${fillClass}" style="width:${pct}%"></div></div>
-                <span style="min-width:45px; text-align:right; font-size:clamp(0.7rem,2vw,0.9rem); ${colorStyle}">${val}</span>
-            `;
-            container.appendChild(div);
-        });
-    })();
+    }
+})();
 </script>
 </body>
 </html>
