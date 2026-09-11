@@ -541,6 +541,7 @@
     const SHEET_ID = '1M6yCm3g18A7zxMt5H5rgGcav0EYm2FQ3G1wewkj6Jqk';
     const SHEET_NAME = 'Аркуш1'; // назва листа з колонками Year, Requests, Highlight, Note
 
+
     const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
 
     const statusScreen = document.getElementById('statusScreen');
@@ -604,6 +605,10 @@
         const n = requests.length;
         const cagr = (first > 0 && n > 1) ? (Math.pow(last / first, 1 / (n - 1)) - 1) * 100 : 0;
 
+        // Порівняння поточного року з попереднім (для великої цифри "загальна кількість")
+        const prevYearVal = currentIdx > 0 ? requests[currentIdx - 1] : null;
+        const yoyPct = prevYearVal ? Math.round(((requests[currentIdx] - prevYearVal) / prevYearVal) * 100) : null;
+
         // Заголовок / бейджі
         document.getElementById('headerBadges').innerHTML = `
             <span style="background: #113355; border-radius: 40px; border:1px solid #2266aa;"><i class="fas fa-database"></i> архів ${years[0]}–${years[years.length-1]}</span>
@@ -641,7 +646,11 @@
 
         document.getElementById('cagrBadge').textContent = `CAGR ${cagr >= 0 ? '+' : ''}${cagr.toFixed(0)}%`;
         document.getElementById('totalNumber').textContent = total.toLocaleString('uk-UA');
-        document.getElementById('totalGrowth').innerHTML = `<i class="fas fa-arrow-${growthPct >= 0 ? 'up' : 'down'}" style="color:${growthPct >= 0 ? '#10b981' : '#dc2626'};"></i> ${growthPct >= 0 ? '+' : ''}${growthPct}% vs ${years[0]}`;
+        if (yoyPct !== null) {
+            document.getElementById('totalGrowth').innerHTML = `<i class="fas fa-arrow-${yoyPct >= 0 ? 'up' : 'down'}" style="color:${yoyPct >= 0 ? '#10b981' : '#dc2626'};"></i> ${yoyPct >= 0 ? '+' : ''}${yoyPct}% vs ${years[currentIdx - 1]}`;
+        } else {
+            document.getElementById('totalGrowth').innerHTML = '';
+        }
 
         // Блок "поточний рік"
         const prevVal = currentIdx > 0 ? requests[currentIdx - 1] : null;
