@@ -89,9 +89,14 @@ details.settings[open] summary{margin-bottom:12px}
 .page .blue{color:#0070c0}
 .page .closing{break-inside:avoid;page-break-inside:avoid}
 .page p{orphans:2;widows:2}
-.page .pbreak{position:absolute;left:0;right:0;border-top:1.5px dashed #98a2b3;pointer-events:none}
-.page .pbreak span{position:absolute;right:6px;top:-18px;font:11px 'Segoe UI',Arial,sans-serif;color:#667085;background:#fff;padding:0 4px}
-.page .addr{margin-left:49.3%;padding-left:1.8mm;text-align:left}
+/* мастер-копія: невидима на екрані, з неї друк і розбивка */
+.page.master{position:absolute;left:-10000px;top:0;visibility:hidden;box-shadow:none}
+.sheets{display:flex;flex-direction:column;gap:18px}
+.page.sheet{height:297mm;min-height:0;overflow:hidden;padding-bottom:0}
+.page.sheet .win{overflow:hidden;position:relative}
+.sheet-label{font:12px 'Segoe UI',Arial,sans-serif;color:#667085;margin:0 0 -12px 2px}
+.page .addr{margin-left:61%;text-align:left}
+.page table.hdr td + td{text-align:right}
 .page .v{background:var(--hl);border-radius:2px}
 .page .v.empty{background:#ffd9d2;color:#9b2c1b}
 .page .letter-body:focus{outline:2px dashed #b9c3d3;outline-offset:6px}
@@ -112,7 +117,8 @@ details.settings[open] summary{margin-bottom:12px}
   .paper-zoom{transform:none !important;width:auto !important;height:auto !important}
   .page{box-shadow:none;min-height:0;width:auto;padding:0 12.6mm 0 30mm}
   .page .v,.page .v.empty{background:none;color:inherit}
-  .page .pbreak{display:none}
+  .sheets,.sheet-label{display:none !important}
+  .page.master{position:static;left:auto;visibility:visible}
   .page table.wrap > tfoot td{height:24mm}
   .page .footer{position:fixed;bottom:12mm}
 }
@@ -143,7 +149,7 @@ details.settings[open] summary{margin-bottom:12px}
           <button class="btn primary" id="printBtn">🖨 Надрукувати</button>
           <span class="note">Жовтим — підставлені дані, червоним — незаповнене. Текст на аркуші можна підправити вручну перед друком (правки скидаються, якщо змінити поля).</span>
         </div>
-        <div class="paper-scroll" id="paperScroll"><div class="paper-zoom" id="paperZoom"><div class="page" id="page"></div></div></div>
+        <div class="paper-scroll" id="paperScroll"><div class="paper-zoom" id="paperZoom"><div class="sheets no-print" id="sheets"></div></div></div><div class="page master" id="page"></div>
       </div>
     </div>
   </div>
@@ -390,7 +396,7 @@ function renderLetter(){
   const body = t ? t.body(S) : ['<span style="color:#98a2b3">Оберіть варіант відповіді, щоб побачити текст листа.</span>'];
   page.innerHTML = `
   <table class="wrap"><thead class="print-only"><tr><td></td></tr></thead>
-  <tfoot><tr><td></td></tr></tfoot><tbody><tr><td>
+  <tfoot><tr><td></td></tr></tfoot><tbody><tr><td><div class="flow">
     <p class="c">&nbsp;</p>
     <p class="c"><img class="logo" src="${LOGO}" alt=""></p>
     <div class="blue">
@@ -425,39 +431,80 @@ function renderLetter(){
     <p class="sign"><span>${esc(cfg.directorPos)}</span><span>${esc(cfg.directorName)}</span></p>
     </div>
     </div>
-  </td></tr></tbody></table>
+  </div></td></tr></tbody></table>
   <div class="footer">${footer ? esc(footer) : '<span class="v empty">виконавець</span>'}</div>`;
   manualEdit = false;
-  page.querySelector('.letter-body').addEventListener('input', () => { manualEdit = true; markBreaks(); });
-  markBreaks();
+  paginate();
   const fio = [S.surname, S.name].filter(Boolean).join(' ');
   document.title = S.type ? `${S.inNum || 'СЦ'} ${fio}`.trim() : 'Відповіді на запити — КП «ІНФО-РАДА-ДНІПРО»';
   fitPaper();
 }
 
-// Пунктир на аркуші там, де при друці почнеться наступна сторінка
-function markBreaks(){
-  const page = $('#page'); if (!page) return;
-  page.querySelectorAll('.pbreak').forEach(x => x.remove());
-  const mm = 96/25.4, foot = 24;
-  const contentH = page.querySelector('table.wrap').offsetHeight;
-  let y = 5 + (297 - 5 - foot), n = 2;
-  while (y*mm < 5*mm + contentH - 2 && n < 6){
-    const d = document.createElement('div'); d.className = 'pbreak'; d.style.top = (y*mm) + 'px';
-    d.innerHTML = `<span>↓ аркуш ${n}</span>`; page.appendChild(d);
-    y += 297 - 15 - foot; n++;
+// Розбивка листа на аркуші A4 для екрана (друк іде з мастер-копії тим самим потоком)
+const MM = 96/25.4, FOOT_MM = 24, TOP1_MM = 5, TOPN_MM = 15;
+function paginate(){
+  const master = $('#page'), host = $('#sheets');
+  const flow = master.querySelector('.flow');
+  const base = flow.getBoundingClientRect().top;
+  const total = flow.getBoundingClientRect().height;
+  // межі рядків тексту
+  const lines = [];
+  const tw = document.createTreeWalker(flow, NodeFilter.SHOW_TEXT);
+  const rg = document.createRange();
+  while (tw.nextNode()){
+    rg.selectNodeContents(tw.currentNode);
+    for (const r of rg.getClientRects()) if (r.height > 0) lines.push({top: r.top - base, bottom: r.bottom - base});
   }
+  flow.querySelectorAll('img').forEach(im => { const r = im.getBoundingClientRect(); lines.push({top: r.top - base, bottom: r.bottom - base}); });
+  lines.sort((a,b) => a.top - b.top);
+  const closing = flow.querySelector('.closing');
+  const cr = closing ? closing.getBoundingClientRect() : null;
+  const cTop = cr ? cr.top - base : Infinity, cBot = cr ? cr.bottom - base : Infinity;
+  const slices = []; let start = 0;
+  while (start < total - 1 && slices.length < 8){
+    const cap = (297 - (slices.length ? TOPN_MM : TOP1_MM) - FOOT_MM) * MM;
+    const limit = start + cap;
+    if (limit >= total - 0.5){ slices.push([start, total]); break; }
+    const first = lines.find(l => l.top >= start - 0.5 && l.bottom > limit + 0.5);
+    let cut = first ? first.top : limit;
+    if (cut > cTop + 1 && cut < cBot && cTop > start + 1) cut = cTop;   // підпис не відриваємо
+    if (cut <= start + 1) cut = limit;
+    slices.push([start, cut]); start = cut;
+  }
+  const footerHTML = master.querySelector('.footer').outerHTML;
+  host.innerHTML = '';
+  slices.forEach(([a, b], i) => {
+    if (slices.length > 1){ const lb = document.createElement('div'); lb.className = 'sheet-label'; lb.textContent = `Аркуш ${i+1} з ${slices.length}`; host.appendChild(lb); }
+    const sh = document.createElement('div');
+    sh.className = 'page sheet';
+    sh.style.paddingTop = (i ? TOPN_MM : TOP1_MM) + 'mm';
+    sh.innerHTML = `<div class="win" style="height:${b - a}px"><div style="margin-top:${-a}px"></div></div>${footerHTML}`;
+    sh.querySelector('.win > div').appendChild(flow.cloneNode(true));
+    host.appendChild(sh);
+  });
+  // правки вручну: синхронізуємо в мастер і в інші аркуші, перерозбиваємо після виходу з поля
+  host.querySelectorAll('.letter-body').forEach(el => {
+    el.addEventListener('input', () => {
+      manualEdit = true;
+      const html = el.innerHTML;
+      master.querySelector('.letter-body').innerHTML = html;
+      host.querySelectorAll('.letter-body').forEach(o => { if (o !== el) o.innerHTML = html; });
+    });
+    el.addEventListener('blur', () => setTimeout(() => { if (!host.contains(document.activeElement)) { paginate(); } }, 0));
+  });
+  fitPaper();
 }
 
 function fitPaper(){
-  const sc = $('#paperScroll'), z = $('#paperZoom'), p = $('#page');
-  const w = p.offsetWidth, avail = sc.clientWidth;
+  const sc = $('#paperScroll'), z = $('#paperZoom'), host = $('#sheets');
+  const w = host.offsetWidth || 1, avail = sc.clientWidth;
   const k = Math.min(1, avail / w);
   z.style.transform = k < 1 ? `scale(${k})` : '';
   z.style.width = w + 'px';
-  z.style.height = k < 1 ? (p.offsetHeight * k) + 'px' : '';
+  z.style.height = k < 1 ? (host.offsetHeight * k) + 'px' : '';
 }
 window.addEventListener('resize', fitPaper);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => paginate());
 
 /* ================= ФОРМА ================= */
 function tag(k){ return fromSheet.has(k) ? '<span class="tag">з таблиці</span>' : ''; }
