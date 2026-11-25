@@ -105,22 +105,20 @@ details.settings[open] summary{margin-bottom:12px}
 .page .footer{position:absolute;left:30mm;right:12.6mm;bottom:12mm;font-size:11pt;text-align:justify}
 .print-only{display:none}
 /* print */
-@page{size:A4;margin:15mm 0 0 0}
-@page :first{margin-top:5mm}
+@page{size:A4;margin:0}
 @media print{
   body{background:#fff}
-  .no-print,.topbar,main h2,.types,.form-col,.preview-bar{display:none !important}
+  .no-print,.topbar,main h2,.types,.form-col,.preview-bar,.sheet-label,.page.master{display:none !important}
   main{padding:0;max-width:none}
   .work{display:block;margin:0}
   .preview-wrap{position:static}
   .paper-scroll{overflow:visible;padding:0}
   .paper-zoom{transform:none !important;width:auto !important;height:auto !important}
-  .page{box-shadow:none;min-height:0;width:auto;padding:0 12.6mm 0 30mm}
+  .sheets{display:block;gap:0}
+  .page.sheet{box-shadow:none;width:210mm;height:296.5mm;break-after:page;page-break-after:always}
+  .page.sheet:last-child{break-after:auto;page-break-after:auto}
   .page .v,.page .v.empty{background:none;color:inherit}
-  .sheets,.sheet-label{display:none !important}
-  .page.master{position:static;left:auto;visibility:visible}
-  .page table.wrap > tfoot td{height:24mm}
-  .page .footer{position:fixed;bottom:12mm}
+  .page .letter-body:focus{outline:none}
 }
 </style>
 </head>
@@ -149,7 +147,7 @@ details.settings[open] summary{margin-bottom:12px}
           <button class="btn primary" id="printBtn">🖨 Надрукувати</button>
           <span class="note">Жовтим — підставлені дані, червоним — незаповнене. Текст на аркуші можна підправити вручну перед друком (правки скидаються, якщо змінити поля).</span>
         </div>
-        <div class="paper-scroll" id="paperScroll"><div class="paper-zoom" id="paperZoom"><div class="sheets no-print" id="sheets"></div></div></div><div class="page master" id="page"></div>
+        <div class="paper-scroll" id="paperScroll"><div class="paper-zoom" id="paperZoom"><div class="sheets" id="sheets"></div></div></div><div class="page master" id="page"></div>
       </div>
     </div>
   </div>
@@ -440,7 +438,7 @@ function renderLetter(){
   fitPaper();
 }
 
-// Розбивка листа на аркуші A4 для екрана (друк іде з мастер-копії тим самим потоком)
+// Розбивка листа на аркуші A4: ці ж аркуші й друкуються; колонтитул — лише на останньому
 const MM = 96/25.4, FOOT_MM = 24, TOP1_MM = 5, TOPN_MM = 15;
 function paginate(){
   const master = $('#page'), host = $('#sheets');
@@ -478,7 +476,7 @@ function paginate(){
     const sh = document.createElement('div');
     sh.className = 'page sheet';
     sh.style.paddingTop = (i ? TOPN_MM : TOP1_MM) + 'mm';
-    sh.innerHTML = `<div class="win" style="height:${b - a}px"><div style="margin-top:${-a}px"></div></div>${footerHTML}`;
+    sh.innerHTML = `<div class="win" style="height:${b - a}px"><div style="margin-top:${-a}px"></div></div>${i === slices.length - 1 ? footerHTML : ''}`;
     sh.querySelector('.win > div').appendChild(flow.cloneNode(true));
     host.appendChild(sh);
   });
