@@ -75,7 +75,7 @@ details.settings[open] summary{margin-bottom:12px}
 .paper-zoom{transform-origin:top left}
 /* ===== letter ===== */
 .page{width:210mm;min-height:297mm;background:#fff;box-shadow:0 1px 3px rgba(16,24,40,.12),0 8px 24px rgba(16,24,40,.08);
-  padding:5mm 12.6mm 0 30mm;position:relative;color:#000;
+  padding:5mm 12.6mm 28mm 30mm;position:relative;color:#000;
   font-family:"Times New Roman",Times,serif;font-size:14pt;line-height:1.15}
 .page p{margin:0;min-height:1.15em}
 .page .c{text-align:center}
@@ -86,6 +86,12 @@ details.settings[open] summary{margin-bottom:12px}
 .page table.hdr{width:100%;border-collapse:collapse;table-layout:fixed}
 .page table.hdr td{padding:1.8mm 1.8mm;vertical-align:top;font-size:14pt}
 .page .sign{display:flex;justify-content:space-between}
+.page .blue{color:#0070c0}
+.page .closing{break-inside:avoid;page-break-inside:avoid}
+.page p{orphans:2;widows:2}
+.page .pbreak{position:absolute;left:0;right:0;border-top:1.5px dashed #98a2b3;pointer-events:none}
+.page .pbreak span{position:absolute;right:6px;top:-18px;font:11px 'Segoe UI',Arial,sans-serif;color:#667085;background:#fff;padding:0 4px}
+.page .addr{margin-left:49.3%;padding-left:1.8mm;text-align:left}
 .page .v{background:var(--hl);border-radius:2px}
 .page .v.empty{background:#ffd9d2;color:#9b2c1b}
 .page .letter-body:focus{outline:2px dashed #b9c3d3;outline-offset:6px}
@@ -94,19 +100,19 @@ details.settings[open] summary{margin-bottom:12px}
 .page .footer{position:absolute;left:30mm;right:12.6mm;bottom:12mm;font-size:11pt;text-align:justify}
 .print-only{display:none}
 /* print */
-@page{size:A4;margin:0}
+@page{size:A4;margin:15mm 0 0 0}
+@page :first{margin-top:5mm}
 @media print{
   body{background:#fff}
   .no-print,.topbar,main h2,.types,.form-col,.preview-bar{display:none !important}
-  .page thead.print-only{display:table-header-group}
   main{padding:0;max-width:none}
   .work{display:block;margin:0}
   .preview-wrap{position:static}
   .paper-scroll{overflow:visible;padding:0}
   .paper-zoom{transform:none !important;width:auto !important;height:auto !important}
   .page{box-shadow:none;min-height:0;width:auto;padding:0 12.6mm 0 30mm}
-  .page .v,.page .v.empty{background:none;color:#000}
-  .page table.wrap > thead td{height:5mm;padding:0}
+  .page .v,.page .v.empty{background:none;color:inherit}
+  .page .pbreak{display:none}
   .page table.wrap > tfoot td{height:24mm}
   .page .footer{position:fixed;bottom:12mm}
 }
@@ -258,7 +264,7 @@ const S = Object.assign({
   datName: '', vocName: '', datLock: false, vocLock: false,
   executor: '',
   cams: null, place: '', d1: '', t1: '', d2: '', t2: '', multiDay: false, size: '',
-  lawyer: true, subject: 'відомості та документи щодо транспортних засобів, належних невстановленим особам',
+  lawyer: true, lawyerDate: '', lawyerDateLock: false, subject: 'відомості та документи щодо транспортних засобів, належних невстановленим особам',
   rowKey: ''
 }, store.get('state', {}));
 let fromSheet = new Set(store.get('fromSheet', []));
@@ -282,6 +288,10 @@ function period(s, sep, mode){
   return head;
 }
 const one = s => s.cams === 'one';
+const lawyerDate = s => s.lawyerDateLock ? s.lawyerDate : s.reqDate;
+const DEFAULT_SUBJECT = 'відомості та документи щодо транспортних засобів, належних невстановленим особам';
+function subjectHistory(){ const h = store.get('subjHist', []); return [...new Set([...h, DEFAULT_SUBJECT])].slice(0, 7); }
+function rememberSubject(){ const v = (S.subject||'').trim(); if (!v) return; store.set('subjHist', [v, ...store.get('subjHist', []).filter(x => x !== v)].slice(0, 6)); }
 
 const TYPES = {
   regular: {
@@ -321,12 +331,13 @@ const TYPES = {
     title:'Велика відмова', desc:'Адвокатський запит, конфіденційна інформація', fields:['lawyer','subject'],
     body: s => {
       const z = s.lawyer ? 'адвокатський запит' : 'запит', zg = s.lawyer ? 'адвокатського запиту' : 'запиту';
+      const ld = lawyerDate(s);
       return [
-      `Комунальним підприємством, у межах повноважень, уважно розглянуто Ваш ${z} від ${V(isoToUa(s.reqDate))}, щодо надання конфіденційної інформації з обмеженим доступом і повідомляємо таке.`,
+      `Комунальним підприємством, у межах повноважень, уважно розглянуто Ваш ${z} від ${V(isoToUa(ld))}, щодо надання конфіденційної інформації з обмеженим доступом і повідомляємо таке.`,
       `Відповідно до статті 19 Конституції України правовий порядок в Україні ґрунтується на засадах, відповідно до яких ніхто не може бути примушений робити те, що не передбачено законодавством.`,
       `Органи державної влади та органи місцевого самоврядування, їх посадові особи зобов'язані діяти лише на підставі, в межах повноважень та у спосіб, що передбачені Конституцією України та законами України.`,
       `Частиною третьою статті 24 Закону України «Про місцеве самоврядування в Україні» також передбачено, що органи місцевого самоврядування та їх посадові особи діють лише на підставі, в межах повноважень та у спосіб, передбачені Конституцією і законами України, та керуються у своїй діяльності Конституцією і законами України, актами Президента України, Кабінету Міністрів України, а в Автономній Республіці Крим - також нормативно-правовими актами Верховної Ради і Ради міністрів Автономної Республіки Крим, прийнятими у межах їхньої компетенції.`,
-      `Згідно Вашого ${zg} від ${V(isoToWords(s.reqDate))}, предметом запиту є ${V(s.subject)}, які, відповідно до Закону України «Про інформацію» та Закону України «Про доступ до публічної інформації» - мають обмежений доступ, так як є конфіденційними і їх розголошення може завдати істотної шкоди охоронюваним інтересам, правам та основоположним свободам особи і доступ до яких можливий виключно за рішенням суду.`,
+      `Згідно Вашого ${zg} від ${V(isoToWords(ld))}, предметом запиту є ${V(s.subject)}, які, відповідно до Закону України «Про інформацію» та Закону України «Про доступ до публічної інформації» - мають обмежений доступ, так як є конфіденційними і їх розголошення може завдати істотної шкоди охоронюваним інтересам, правам та основоположним свободам особи і доступ до яких можливий виключно за рішенням суду.`,
       `Таким чином, у зв’язку із вищевказаним, посадові особи обмежені правом розголошення зазначених відомостей.`,
       `Охорона визначеної законом таємниці від протиправних посягань здійснюється як нормами матеріального права, закріплених у статтях 182 та 387  Кримінального кодексу України так і Конституцією України, статтею 32 якої передбачено захист від незаконного збирання, зберігання, використання та поширення конфіденційної інформації.`,
       `Враховуючи вищевикладене, КП «ІНФО-РАДА-ДНІПРО» готове сприяти наданню доступу до запитуваної інформації, якщо особи будуть діяти на підставі, у межах повноважень та у спосіб, передбачені Конституцією та законами України.` ];
@@ -382,6 +393,7 @@ function renderLetter(){
   <tfoot><tr><td></td></tr></tfoot><tbody><tr><td>
     <p class="c">&nbsp;</p>
     <p class="c"><img class="logo" src="${LOGO}" alt=""></p>
+    <div class="blue">
     <p class="c s12 b">КОМУНАЛЬНЕ ПІДПРИЄМСТВО</p>
     <p class="c s12 b">«ІНФО-РАДА-ДНІПРО»</p>
     <p class="c s12 b">ДНІПРОВСЬКОЇ МІСЬКОЇ РАДИ</p>
@@ -390,31 +402,51 @@ function renderLetter(){
     <p class="c s12">&nbsp;</p>
     <table class="hdr"><colgroup><col style="width:49.3%"><col></colgroup><tr>
       <td>______________№ _______________</td>
-      <td>&nbsp;&nbsp;&nbsp;На ${V(S.inNum)} від ${V(isoToUa(S.reqDate))}</td>
+      <td>На ${V(S.inNum)} від ${V(isoToUa(S.reqDate))}</td>
     </tr></table>
+    </div>
     <div class="letter-body" contenteditable="true" spellcheck="false">
+    <div class="addr">
     <p>${lawyer ? 'Адвокату' : '&nbsp;'}</p>
     <p>${V(S.datName)}</p>
     <p>&nbsp;</p>
     <p>${V(S.email)}</p>
+    </div>
     <p>&nbsp;</p>
     ${lawyer ? '<p>Про розгляд адвокатського</p><p>запиту</p>' : '<p>Про розгляд запиту</p>'}
     <p class="s12">&nbsp;</p>
     <p class="c">${greet}</p>
     <p>&nbsp;</p>
     ${body.map(x => `<p class="j">${x}</p>`).join('')}
+    <div class="closing">
     <p class="j">&nbsp;</p>
     <p class="j">З повагою</p>
     <p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p>
     <p class="sign"><span>${esc(cfg.directorPos)}</span><span>${esc(cfg.directorName)}</span></p>
     </div>
+    </div>
   </td></tr></tbody></table>
   <div class="footer">${footer ? esc(footer) : '<span class="v empty">виконавець</span>'}</div>`;
   manualEdit = false;
-  page.querySelector('.letter-body').addEventListener('input', () => manualEdit = true);
+  page.querySelector('.letter-body').addEventListener('input', () => { manualEdit = true; markBreaks(); });
+  markBreaks();
   const fio = [S.surname, S.name].filter(Boolean).join(' ');
   document.title = S.type ? `${S.inNum || 'СЦ'} ${fio}`.trim() : 'Відповіді на запити — КП «ІНФО-РАДА-ДНІПРО»';
   fitPaper();
+}
+
+// Пунктир на аркуші там, де при друці почнеться наступна сторінка
+function markBreaks(){
+  const page = $('#page'); if (!page) return;
+  page.querySelectorAll('.pbreak').forEach(x => x.remove());
+  const mm = 96/25.4, foot = 24;
+  const contentH = page.querySelector('table.wrap').offsetHeight;
+  let y = 5 + (297 - 5 - foot), n = 2;
+  while (y*mm < 5*mm + contentH - 2 && n < 6){
+    const d = document.createElement('div'); d.className = 'pbreak'; d.style.top = (y*mm) + 'px';
+    d.innerHTML = `<span>↓ аркуш ${n}</span>`; page.appendChild(d);
+    y += 297 - 15 - foot; n++;
+  }
 }
 
 function fitPaper(){
@@ -491,8 +523,14 @@ function renderForm(){
       <label class="f"><span>Обсяг, ГБ (приблизно)</span><input type="number" min="1" data-k="size" value="${esc(S.size)}" placeholder="60"></label>`;
   if (f.includes('lawyer')) h += `
       <label class="check full"><input type="checkbox" data-k="lawyer" ${S.lawyer?'checked':''}> Адвокатський запит (рядок «Адвокату», «адвокатського запиту»)</label>`;
+  if (f.includes('lawyer')) h += `
+      <label class="f"><span>Дата ${S.lawyer?'адвокатського ':''}запиту (як у самому запиті) ${S.lawyerDateLock?'':'<span class="tag auto">= дата запиту</span>'}</span>
+        <div class="withbtn"><input type="date" data-k="lawyerDate" value="${esc(lawyerDate(S))}"><button class="reset" data-reset="ld" title="Як дата запиту з таблиці">↺</button></div></label>
+      <div class="f hint" style="align-self:end">У листі двічі: «…запит від <b>${esc(isoToUa(lawyerDate(S))) || '__.__.____'}</b>…» (1-й абзац) і «Згідно Вашого ${S.lawyer?'адвокатського ':''}запиту від <b>${esc(isoToWords(lawyerDate(S))) || '__ ______ ____ року'}</b>…» (5-й абзац).</div>`;
   if (f.includes('subject')) h += `
-      <label class="f full"><span>Предмет запиту («…предметом запиту є …»)</span><textarea data-k="subject" rows="3">${esc(S.subject)}</textarea></label>`;
+      <label class="f full"><span>Предмет запиту («…предметом запиту є …, які … мають обмежений доступ»)</span><textarea data-k="subject" rows="3">${esc(S.subject)}</textarea>
+        <div class="chips">${subjectHistory().map(x => `<button class="chip" data-subj="${esc(x)}" title="${esc(x)}">${esc(x.length > 60 ? x.slice(0,58)+'…' : x)}</button>`).join('')}</div>
+        <span class="hint">Пишіть у формі множини, щоб узгоджувалось з «які … мають»: «відомості та документи щодо …».</span></label>`;
   if (!f.length) h += `<div class="hint full">У цьому варіанті змінюються лише дані заявника.</div>`;
   h += `</div></div>
   <div class="panel">
@@ -537,6 +575,8 @@ function bindForm(){
       }
       if (k==='datName') S.datLock = true;
       if (k==='vocName') S.vocLock = true;
+      if (k==='lawyerDate'){ S.lawyerDateLock = true; save(); renderForm(); renderLetter(); return; }
+      if (k==='reqDate' && S.type==='refusal' && !S.lawyerDateLock){ save(); renderLetter(); const ld = $('#formArea [data-k=lawyerDate]'); if (ld) ld.value = S.reqDate; return; }
       if (k==='multiDay' || k==='lawyer'){ if (k==='multiDay' && S.multiDay && !S.d2) S.d2 = S.d1; save(); renderForm(); renderLetter(); return; }
       save(); renderLetter();
       if (k==='place' && TYPES[S.type].fields.includes('placeNone')){ const hint = area.querySelector('.hint.full'); if (hint) hint.textContent = `У листі: «${capFirst(S.place)||'По вул. …'} камери відеоспостереження, що підключені до системи… відсутні».`; }
@@ -553,8 +593,11 @@ function bindForm(){
   })));
   area.querySelectorAll('[data-reset]').forEach(b => b.addEventListener('click', e => {
     e.preventDefault();
-    if (b.dataset.reset==='dat') S.datLock = false; else S.vocLock = false;
+    if (b.dataset.reset==='dat') S.datLock = false; else if (b.dataset.reset==='ld') S.lawyerDateLock = false; else S.vocLock = false;
     recompute(); save(); renderForm(); renderLetter();
+  }));
+  area.querySelectorAll('[data-subj]').forEach(b => b.addEventListener('click', e => {
+    e.preventDefault(); S.subject = b.dataset.subj; save(); renderForm(); renderLetter();
   }));
   area.querySelectorAll('[data-chip]').forEach(b => b.addEventListener('click', e => {
     e.preventDefault();
@@ -609,7 +652,7 @@ function parseRow(cells, key){
 function fillFromRow(r, overwrite){
   if (!r) return;
   const newReq = r.key !== S.rowKey;
-  if (newReq) clearFields(false);
+  if (newReq){ clearFields(false); S.lawyerDateLock = false; S.lawyerDate = ''; }
   const parts = r.person.replace(/\s+/g,' ').trim().split(' ');
   const vals = {
     inNum: r.inNum, reqDate: uaToIso(r.date) || todayIso(),
@@ -684,6 +727,7 @@ $('#printBtn').addEventListener('click', () => {
   if (!S.type){ alert('Спочатку оберіть варіант відповіді.'); return; }
   const empties = $('#page').querySelectorAll('.v.empty').length;
   if (empties && !confirm(`У листі ${empties} незаповнен${empties===1?'е місце':'их місць'} (позначено червоним). Друкувати все одно?`)) return;
+  if (S.type==='refusal') rememberSubject();
   window.print();
 });
 $('#reloadBtn').addEventListener('click', () => loadSheet(true));
