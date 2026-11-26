@@ -597,11 +597,12 @@ function renderForm(){
   if (f.includes('place')) h += `
       <label class="f full"><span>Адреса камер (з прийменником, як у тексті)</span>
         <input type="text" data-k="place" id="placeIn" value="${esc(S.place)}" placeholder="${esc(placePh)}">
-        <div class="chips">${['на вул. ','по вул. ','на просп. ','на перехресті вул.  та вул. ',' біля буд. ',' поблизу буд. №'].map(c=>`<button class="chip" data-chip="${esc(c)}">${esc(c.trim())}</button>`).join('')}</div></label>
+        ${placeChips()}</label>
       ${bridgeBlock()}`;
   if (f.includes('placeNone')) h += `
       <label class="f full"><span>Вулиця (з початку речення)</span>
-        <input type="text" data-k="place" value="${esc(S.place)}" placeholder="По вул. Ольгерда Бочковського"></label>
+        <input type="text" data-k="place" id="placeIn" value="${esc(S.place)}" placeholder="По вул. Ольгерда Бочковського">
+        ${placeChips()}</label>
       ${bridgeBlock()}
       <div class="hint full">У листі: «${esc(capFirst(S.place)||'По вул. …')} камери відеоспостереження, що підключені до системи… відсутні».</div>`;
   if (f.includes('period')) h += `
@@ -825,6 +826,11 @@ function renderTypes(){
     $('#work').scrollIntoView({behavior:'smooth', block:'start'});
   }));
 }
+
+/* ================= ШВИДКІ ВСТАВКИ АДРЕСИ ================= */
+const PLACE_CHIPS = ['на вул. ','по вул. ','на просп. ','на бульварі ','по бульвару ','на узвозі ','по узвозу ','в пров. ','по пров. ',
+  'на перехресті вул.  та вул. ',' біля буд. ',' поблизу буд. №'];
+const placeChips = () => `<div class="chips">${PLACE_CHIPS.map(c => `<button class="chip" data-chip="${esc(c)}">${esc(c.trim())}</button>`).join('')}</div>`;
 
 /* ================= МОСТИ ================= */
 function bridgesList(){ return (cfg.bridges || DEFAULTS.bridges).split('\n').map(x => x.trim()).filter(Boolean); }
