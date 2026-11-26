@@ -200,7 +200,8 @@ const store = {
   set(k, v){ try{ localStorage.setItem('sc_'+k, JSON.stringify(v)); }catch(e){} }
 };
 const cfg = Object.assign({}, DEFAULTS, store.get('cfg', {}));
-if (!cfg.googleClientId) cfg.googleClientId = DEFAULTS.googleClientId;
+// технічні параметри не редагуються з інтерфейсу — завжди з файлу
+for (const k of ['sheetId','gid','googleClientId','driveFolder']) cfg[k] = DEFAULTS[k];
 if (cfg.bridges === 'Центральний\nНовий\nКайдацький\nПівденний\nМерефо-Херсонський') cfg.bridges = DEFAULTS.bridges;
 
 /* ================= ВІДМІНЮВАННЯ ================= */
@@ -643,12 +644,7 @@ function renderForm(){
         <label class="f"><span>Підпис</span><input type="text" id="cfgDir" value="${esc(cfg.directorName)}"></label>
         <label class="f full"><span>Рядки над ПІБ для «ОРАНТА»</span><textarea id="cfgOranta" rows="4">${esc(cfg.oranta)}</textarea></label>
         <label class="f full"><span>Мости (по одному в рядку, як прикметник: «Центральний»)</span><textarea id="cfgBridges" rows="5">${esc(cfg.bridges)}</textarea></label>
-        <div class="full" style="border-top:1px solid var(--line);padding-top:10px;font-weight:600">Google Диск</div>
-        <label class="f full"><span>OAuth Client ID</span><input type="text" id="cfgClient" value="${esc(cfg.googleClientId)}" placeholder="123456789-abc….apps.googleusercontent.com"></label>
-        <label class="f full"><span>Папка на Диску (створиться сама)</span><input type="text" id="cfgFolder" value="${esc(cfg.driveFolder)}"></label>
 
-        <label class="f"><span>ID Google-таблиці</span><input type="text" id="cfgSheet" value="${esc(cfg.sheetId)}"></label>
-        <label class="f"><span>gid аркуша</span><input type="text" id="cfgGid" value="${esc(cfg.gid)}"></label>
         <label class="f full"><span>Якщо таблиця не підвантажується — скопіюйте рядок у таблиці (виділити рядок → Ctrl+C) і вставте сюди:</span>
           <textarea id="pasteRow" rows="2" placeholder="2232	10.11.2026	СЦ-10/11/4	Слободін Єгор	…"></textarea></label>
         <div class="row full"><button class="btn small" id="cfgSave">Зберегти</button><button class="btn small" id="clearBtn">Очистити поля</button></div>
@@ -717,15 +713,12 @@ function bindForm(){
   $('#rowApply').addEventListener('click', e => { e.preventDefault(); applyRow($('#rowSel').value, true); });
   $('#rowSel').addEventListener('change', () => applyRow($('#rowSel').value, true));
   $('#cfgSave').addEventListener('click', () => {
-    cfg.executors = $('#cfgExec').value; cfg.phone = $('#cfgPhone').value.trim(); cfg.directorName = $('#cfgDir').value.trim(); cfg.oranta = $('#cfgOranta').value; cfg.bridges = $('#cfgBridges').value; cfg.googleClientId = $('#cfgClient').value.trim(); cfg.driveFolder = $('#cfgFolder').value.trim() || DEFAULTS.driveFolder; driveToken = null; driveFolderId = null;
-    const idChanged = cfg.sheetId !== $('#cfgSheet').value.trim() || cfg.gid !== $('#cfgGid').value.trim();
-    cfg.sheetId = $('#cfgSheet').value.trim(); cfg.gid = $('#cfgGid').value.trim();
+    cfg.executors = $('#cfgExec').value; cfg.phone = $('#cfgPhone').value.trim(); cfg.directorName = $('#cfgDir').value.trim(); cfg.oranta = $('#cfgOranta').value; cfg.bridges = $('#cfgBridges').value;
     store.set('cfg', cfg);
     const paste = $('#pasteRow').value.trim();
     if (paste){ const r = parseRow(paste.split('\t'), 'paste'); sheetRows.push(r); fillFromRow(r, true); }
     if (fromSheet.has('executor')){ const r = sheetRows.find(x => x.key===S.rowKey); if (r) S.executor = executorFooter(r.executor); }
     save(); renderForm(); renderLetter();
-    if (idChanged) loadSheet(false);
   });
   $('#clearBtn').addEventListener('click', () => { clearFields(true); save(); renderForm(); renderLetter(); });
 }
@@ -1060,8 +1053,7 @@ async function uploadDoc(){
 }
 $('#driveBtn').addEventListener('click', async () => {
   if (!cfg.googleClientId){
-    toast('Вкажіть Client ID: «Налаштування» → «Google Диск».', 'err');
-    const d = document.querySelector('details.settings'); if (d){ d.open = true; d.scrollIntoView({behavior:'smooth'}); }
+    toast('Збереження на Google Диск не налаштоване у файлі сайту (googleClientId).', 'err');
     return;
   }
   if (location.protocol === 'file:'){ toast('Збереження на Диск працює лише коли сайт відкрито з сервера (http/https). Поки що збережіть як Word.', 'err'); return; }
