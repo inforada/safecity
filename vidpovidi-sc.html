@@ -23,6 +23,15 @@
   --soft:#1c222a; --field:#364150; --line-strong:#4b5768; --shadow:rgba(0,0,0,.5);
 }
 .theme-btn{min-width:110px}
+.toast{position:fixed;right:24px;bottom:24px;z-index:50;max-width:460px;padding:12px 16px;border-radius:10px;background:var(--panel);border:1px solid var(--line);box-shadow:0 8px 24px var(--shadow);font-size:14px;opacity:0;transform:translateY(10px);pointer-events:none;transition:.2s}
+.toast.show{opacity:1;transform:none;pointer-events:auto}
+.toast.ok{border-color:var(--ok);color:var(--ok)} .toast.err{border-color:var(--warn);color:var(--warn)}
+.toast a{color:inherit;font-weight:600}
+.bridge-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:-2px}
+.bridge-row select{width:auto;flex:1;min-width:120px;padding:6px 8px;font-size:14px}
+.bridge-lbl{font-size:13px;color:var(--muted)}
+pre.code{max-height:220px;overflow:auto;background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:12px;white-space:pre-wrap;margin:6px 0 0}
+@media print{.toast{display:none}}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 "Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
@@ -159,6 +168,8 @@ details.settings[open] summary{margin-bottom:12px}
       <div class="preview-wrap">
         <div class="preview-bar">
           <button class="btn primary" id="printBtn">🖨 Надрукувати</button>
+          <button class="btn" id="driveBtn" title="Зберегти як Google Документ на Диск">☁ На Google Диск</button>
+          <button class="btn" id="docxBtn" title="Завантажити файл Word">⬇ Word</button>
           <span class="note">Жовтим — підставлені дані, червоним — незаповнене. Текст на аркуші можна підправити вручну перед друком (правки скидаються, якщо змінити поля).</span>
         </div>
         <div class="paper-scroll" id="paperScroll"><div class="paper-zoom" id="paperZoom"><div class="sheets" id="sheets"></div></div></div><div class="page master" id="page"></div>
@@ -166,6 +177,7 @@ details.settings[open] summary{margin-bottom:12px}
     </div>
   </div>
 </main>
+<div class="toast" id="toast"></div>
 
 <script>
 /* ================= НАЛАШТУВАННЯ ЗА ЗАМОВЧУВАННЯМ ================= */
@@ -175,6 +187,9 @@ const DEFAULTS = {
   phone: '067 370 12 64',
   directorPos: 'Директор',
   directorName: 'Альона ЧУЄВА',
+  googleClientId: '330559928727-8qh8jkuuhmr7ojhlgqh0gi845ih57sbf.apps.googleusercontent.com',          // ← вставте сюди OAuth Client ID, щоб не вводити на кожному комп’ютері
+  driveFolder: 'Відповіді на запити СЦ',
+  bridges: 'Кайдацький\nСтарий (Амурський)\nЦентральний\nПівденний\nУсть-Самарський\nСамарський',
   oranta: 'Головному фахівцю\nУправління внутрішньої безпеки\nСлужби безпеки головного офісу\nПАТ НАСК «ОРАНТА»',
   executors: 'Лізунова Юлія\nПарій Антон\nВікторова Ольга\nГайдар Нікіта\nКопилов Ігор\nМозуляка Дарина\nЖевжик Олександр\nКоваль Марина\nКозін Євген'
 };
@@ -185,6 +200,8 @@ const store = {
   set(k, v){ try{ localStorage.setItem('sc_'+k, JSON.stringify(v)); }catch(e){} }
 };
 const cfg = Object.assign({}, DEFAULTS, store.get('cfg', {}));
+if (!cfg.googleClientId) cfg.googleClientId = DEFAULTS.googleClientId;
+if (cfg.bridges === 'Центральний\nНовий\nКайдацький\nПівденний\nМерефо-Херсонський') cfg.bridges = DEFAULTS.bridges;
 
 /* ================= ВІДМІНЮВАННЯ ================= */
 const lc = s => (s||'').toLocaleLowerCase('uk');
@@ -283,7 +300,7 @@ const S = Object.assign({
   datName: '', vocName: '', datLock: false, vocLock: false,
   executor: '',
   cams: null, place: '', d1: '', t1: '', d2: '', t2: '', multiDay: false, size: '',
-  lawyer: false, oranta: false, lawyerDate: '', lawyerDateLock: false, subject: 'відомості та документи щодо транспортних засобів, належних невстановленим особам',
+  lawyer: false, oranta: false, bridge: '', bprep: 'na', bbank: '', lawyerDate: '', lawyerDateLock: false, subject: 'відомості та документи щодо транспортних засобів, належних невстановленим особам',
   rowKey: ''
 }, store.get('state', {}));
 let fromSheet = new Set(store.get('fromSheet', []));
@@ -458,6 +475,7 @@ function renderLetter(){
 }
 
 // Розбивка листа на аркуші A4: ці ж аркуші й друкуються; колонтитул — лише на останньому
+let lastPageCount = 1;
 const MM = 96/25.4, FOOT_MM = 24, TOP1_MM = 5, TOPN_MM = 15;
 function paginate(){
   const master = $('#page'), host = $('#sheets');
@@ -488,6 +506,7 @@ function paginate(){
     if (cut <= start + 1) cut = limit;
     slices.push([start, cut]); start = cut;
   }
+  lastPageCount = slices.length;
   const footerHTML = master.querySelector('.footer').outerHTML;
   host.innerHTML = '';
   slices.forEach(([a, b], i) => {
@@ -577,10 +596,12 @@ function renderForm(){
   if (f.includes('place')) h += `
       <label class="f full"><span>Адреса камер (з прийменником, як у тексті)</span>
         <input type="text" data-k="place" id="placeIn" value="${esc(S.place)}" placeholder="${esc(placePh)}">
-        <div class="chips">${['на вул. ','по вул. ','на просп. ','на перехресті вул.  та вул. ',' біля буд. ',' поблизу буд. №'].map(c=>`<button class="chip" data-chip="${esc(c)}">${esc(c.trim())}</button>`).join('')}</div></label>`;
+        <div class="chips">${['на вул. ','по вул. ','на просп. ','на перехресті вул.  та вул. ',' біля буд. ',' поблизу буд. №'].map(c=>`<button class="chip" data-chip="${esc(c)}">${esc(c.trim())}</button>`).join('')}</div></label>
+      ${bridgeBlock()}`;
   if (f.includes('placeNone')) h += `
       <label class="f full"><span>Вулиця (з початку речення)</span>
         <input type="text" data-k="place" value="${esc(S.place)}" placeholder="По вул. Ольгерда Бочковського"></label>
+      ${bridgeBlock()}
       <div class="hint full">У листі: «${esc(capFirst(S.place)||'По вул. …')} камери відеоспостереження, що підключені до системи… відсутні».</div>`;
   if (f.includes('period')) h += `
       <label class="f"><span>Дата події</span><input type="date" data-k="d1" value="${esc(S.d1)}"></label>
@@ -621,6 +642,11 @@ function renderForm(){
         <label class="f"><span>Телефон у колонтитулі</span><input type="text" id="cfgPhone" value="${esc(cfg.phone)}"></label>
         <label class="f"><span>Підпис</span><input type="text" id="cfgDir" value="${esc(cfg.directorName)}"></label>
         <label class="f full"><span>Рядки над ПІБ для «ОРАНТА»</span><textarea id="cfgOranta" rows="4">${esc(cfg.oranta)}</textarea></label>
+        <label class="f full"><span>Мости (по одному в рядку, як прикметник: «Центральний»)</span><textarea id="cfgBridges" rows="5">${esc(cfg.bridges)}</textarea></label>
+        <div class="full" style="border-top:1px solid var(--line);padding-top:10px;font-weight:600">Google Диск</div>
+        <label class="f full"><span>OAuth Client ID</span><input type="text" id="cfgClient" value="${esc(cfg.googleClientId)}" placeholder="123456789-abc….apps.googleusercontent.com"></label>
+        <label class="f full"><span>Папка на Диску (створиться сама)</span><input type="text" id="cfgFolder" value="${esc(cfg.driveFolder)}"></label>
+
         <label class="f"><span>ID Google-таблиці</span><input type="text" id="cfgSheet" value="${esc(cfg.sheetId)}"></label>
         <label class="f"><span>gid аркуша</span><input type="text" id="cfgGid" value="${esc(cfg.gid)}"></label>
         <label class="f full"><span>Якщо таблиця не підвантажується — скопіюйте рядок у таблиці (виділити рядок → Ctrl+C) і вставте сюди:</span>
@@ -674,6 +700,7 @@ function bindForm(){
     inp.style.display = 'none'; inp.value = v;
     inp.dispatchEvent(new Event('input'));
   });
+  bindBridges(area);
   area.querySelectorAll('[data-subj]').forEach(b => b.addEventListener('click', e => {
     e.preventDefault(); S.subject = b.dataset.subj; save(); renderForm(); renderLetter();
   }));
@@ -690,7 +717,7 @@ function bindForm(){
   $('#rowApply').addEventListener('click', e => { e.preventDefault(); applyRow($('#rowSel').value, true); });
   $('#rowSel').addEventListener('change', () => applyRow($('#rowSel').value, true));
   $('#cfgSave').addEventListener('click', () => {
-    cfg.executors = $('#cfgExec').value; cfg.phone = $('#cfgPhone').value.trim(); cfg.directorName = $('#cfgDir').value.trim(); cfg.oranta = $('#cfgOranta').value;
+    cfg.executors = $('#cfgExec').value; cfg.phone = $('#cfgPhone').value.trim(); cfg.directorName = $('#cfgDir').value.trim(); cfg.oranta = $('#cfgOranta').value; cfg.bridges = $('#cfgBridges').value; cfg.googleClientId = $('#cfgClient').value.trim(); cfg.driveFolder = $('#cfgFolder').value.trim() || DEFAULTS.driveFolder; driveToken = null; driveFolderId = null;
     const idChanged = cfg.sheetId !== $('#cfgSheet').value.trim() || cfg.gid !== $('#cfgGid').value.trim();
     cfg.sheetId = $('#cfgSheet').value.trim(); cfg.gid = $('#cfgGid').value.trim();
     store.set('cfg', cfg);
@@ -713,7 +740,7 @@ function syncAuto(){
 function setGender(g){ S.gender = g; }
 
 function clearFields(all){
-  Object.assign(S, {place:'', d1:'', t1:'', d2:'', t2:'', multiDay:false, size:''});
+  Object.assign(S, {bridge:'', bbank:'', place:'', d1:'', t1:'', d2:'', t2:'', multiDay:false, size:''});
   if (all){
     Object.assign(S, {inNum:'', reqDate:'', surname:'', name:'', email:'', datName:'', vocName:'', datLock:false, vocLock:false, executor:'', rowKey:''});
     fromSheet.clear();
@@ -805,6 +832,251 @@ function renderTypes(){
     $('#work').scrollIntoView({behavior:'smooth', block:'start'});
   }));
 }
+
+/* ================= МОСТИ ================= */
+function bridgesList(){ return (cfg.bridges || DEFAULTS.bridges).split('\n').map(x => x.trim()).filter(Boolean); }
+const adjForm = (adj, end) => adj.replace(/ий(?=$|[\s)\-])/g, end);
+const BR_PREP = {
+  na:      a => `на ${adjForm(a,'ому')} мосту`,
+  bilia:   a => `біля ${adjForm(a,'ого')} мосту`,
+  poblyzu: a => `поблизу ${adjForm(a,'ого')} мосту`,
+  zizd:    a => `на з’їзді з ${adjForm(a,'ого')} мосту`,
+  pid:     a => `під ${adjForm(a,'им')} мостом`
+};
+const BR_PREP_LABEL = {na:'на … мосту', bilia:'біля … мосту', poblyzu:'поблизу … мосту', zizd:'на з’їзді з … мосту', pid:'під … мостом'};
+function bridgePhrase(){
+  if (!S.bridge) return '';
+  return BR_PREP[S.bprep || 'na'](S.bridge) + (S.bbank ? ` (${S.bbank})` : '');
+}
+function bridgeBlock(){
+  return `
+      <div class="full bridge-row">
+        <span class="bridge-lbl">Міст:</span>
+        <select data-br="bridge"><option value="">— не міст —</option>${bridgesList().map(b => `<option value="${esc(b)}" ${S.bridge===b?'selected':''}>${esc(b)}</option>`).join('')}</select>
+        <select data-br="bprep">${Object.entries(BR_PREP_LABEL).map(([k,l]) => `<option value="${k}" ${(S.bprep||'na')===k?'selected':''}>${l}</option>`).join('')}</select>
+        <select data-br="bbank"><option value="">берег —</option>${['правий берег','лівий берег'].map(b => `<option ${S.bbank===b?'selected':''}>${b}</option>`).join('')}</select>
+      </div>`;
+}
+function bindBridges(area){
+  area.querySelectorAll('[data-br]').forEach(sel => sel.addEventListener('change', () => {
+    S[sel.dataset.br] = sel.value;
+    if (S.bridge){
+      let p = bridgePhrase();
+      if (S.type === 'notinstalled') p = capFirst(p);
+      S.place = p; fromSheet.delete('place');
+      const inp = area.querySelector('[data-k=place]'); if (inp) inp.value = p;
+    }
+    save(); renderLetter();
+    const hint = area.querySelector('.hint.full'); if (hint && S.type==='notinstalled') hint.textContent = `У листі: «${capFirst(S.place)||'По вул. …'} камери відеоспостереження, що підключені до системи… відсутні».`;
+  }));
+}
+
+/* ================= WORD (.docx) ================= */
+const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++){ let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(b){ let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC_T[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function zipStore(files){ // files: [{name, data:Uint8Array}] — ZIP без стиснення
+  const enc = new TextEncoder(), parts = [], central = []; let off = 0;
+  for (const f of files){
+    const nm = enc.encode(f.name), crc = crc32(f.data), sz = f.data.length;
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true); h.setUint16(4,20,true); h.setUint16(6,0x0800,true); h.setUint16(8,0,true);
+    h.setUint16(10,0,true); h.setUint16(12,0x21,true); h.setUint32(14,crc,true); h.setUint32(18,sz,true); h.setUint32(22,sz,true);
+    h.setUint16(26,nm.length,true); h.setUint16(28,0,true);
+    parts.push(new Uint8Array(h.buffer), nm, f.data);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0,0x02014b50,true); c.setUint16(4,20,true); c.setUint16(6,20,true); c.setUint16(8,0x0800,true); c.setUint16(10,0,true);
+    c.setUint16(12,0,true); c.setUint16(14,0x21,true); c.setUint32(16,crc,true); c.setUint32(20,sz,true); c.setUint32(24,sz,true);
+    c.setUint16(28,nm.length,true); c.setUint32(42,off,true);
+    central.push(new Uint8Array(c.buffer), nm);
+    off += 30 + nm.length + sz;
+  }
+  const cdSize = central.reduce((a,b) => a + b.length, 0);
+  const e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true); e.setUint16(8,files.length,true); e.setUint16(10,files.length,true); e.setUint32(12,cdSize,true); e.setUint32(16,off,true);
+  return new Blob([...parts, ...central, new Uint8Array(e.buffer)], {type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+}
+const xe = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const PX_TW = 15; // 1 css px = 15 twips
+const CONTENT_TW = 11906 - 1700 - 716;
+function rgbHex(c){ const m = c.match(/\d+/g); if (!m) return ''; const h = m.slice(0,3).map(x => (+x).toString(16).padStart(2,'0')).join('').toUpperCase(); return h === '000000' ? '' : h; }
+function rPr(el){
+  const cs = getComputedStyle(el);
+  const sz = Math.round(parseFloat(cs.fontSize) * 1.5);
+  const col = rgbHex(cs.color);
+  return `<w:rPr>${parseInt(cs.fontWeight) >= 600 ? '<w:b/>' : ''}${col ? `<w:color w:val="${col}"/>` : ''}<w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/></w:rPr>`;
+}
+function runsOf(el){
+  const rp = rPr(el); let out = '', buf = '';
+  const flush = () => { if (buf){ out += `<w:r>${rp}<w:t xml:space="preserve">${xe(buf)}</w:t></w:r>`; buf = ''; } };
+  (function walk(n){
+    for (const c of n.childNodes){
+      if (c.nodeType === 3) buf += c.nodeValue.replace(/ /g, ' ');
+      else if (c.nodeName === 'BR'){ flush(); out += `<w:r>${rp}<w:br/></w:r>`; }
+      else if (c.nodeType === 1) walk(c);
+    }
+  })(el);
+  if (!buf.trim() && !out) return `<w:r>${rp}</w:r>`;
+  flush(); return out;
+}
+function pXml(p, baseLeft){
+  const cs = getComputedStyle(p);
+  const al = {center:'center', justify:'both', right:'right'}[cs.textAlign] || 'left';
+  let indL = Math.max(0, Math.round((p.getBoundingClientRect().left - baseLeft) * PX_TW));
+  const addr = p.closest('.addr');
+  if (addr && addr.getBoundingClientRect().width > addr.parentElement.getBoundingClientRect().width * 0.395) indL = Math.max(0, indL - 450); // запас під інші метрики шрифту
+  const first = Math.round(parseFloat(cs.textIndent || 0) * PX_TW);
+  const ppr = `<w:pPr><w:spacing w:after="0" w:line="276" w:lineRule="auto"/>${indL || first ? `<w:ind w:left="${indL}"${first ? ` w:firstLine="${first}"` : ''}/>` : ''}<w:jc w:val="${al}"/></w:pPr>`;
+  if (p.querySelector('img')){
+    return `<w:p>${ppr}<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="615950" cy="707390"/><wp:docPr id="1" name="logo"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="0" name="logo.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rIdImg"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="615950" cy="707390"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
+  }
+  if (p.classList.contains('sign')){
+    const [a, b] = p.querySelectorAll('span'); const rp = rPr(p);
+    return `<w:p><w:pPr><w:tabs><w:tab w:val="right" w:pos="${CONTENT_TW}"/></w:tabs><w:spacing w:after="0" w:line="276" w:lineRule="auto"/></w:pPr><w:r>${rp}<w:t xml:space="preserve">${xe(a.textContent)}</w:t></w:r><w:r>${rp}<w:tab/><w:t xml:space="preserve">${xe(b.textContent)}</w:t></w:r></w:p>`;
+  }
+  return `<w:p>${ppr}${runsOf(p)}</w:p>`;
+}
+function docBodyXml(){
+  const flow = $('#page .flow'), baseLeft = flow.getBoundingClientRect().left;
+  let out = '';
+  (function walk(n){
+    for (const el of n.children){
+      if (el.tagName === 'P') out += pXml(el, baseLeft);
+      else if (el.tagName === 'TABLE'){
+        const tds = el.querySelectorAll('td');
+        const w1 = Math.round(tds[0].getBoundingClientRect().width * PX_TW), w2 = CONTENT_TW - w1;
+        const cell = (td, w) => { const cs = getComputedStyle(td); const al = cs.textAlign === 'right' ? 'right' : 'left';
+          return `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="276" w:lineRule="auto"/><w:jc w:val="${al}"/></w:pPr>${runsOf(td)}</w:p></w:tc>`; };
+        out += `<w:tbl><w:tblPr><w:tblW w:w="${CONTENT_TW}" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar><w:tblBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="nil"/><w:right w:val="nil"/><w:insideH w:val="nil"/><w:insideV w:val="nil"/></w:tblBorders></w:tblPr><w:tblGrid><w:gridCol w:w="${w1}"/><w:gridCol w:w="${w2}"/></w:tblGrid><w:tr>${cell(tds[0], w1)}${cell(tds[1], w2)}</w:tr></w:tbl>`;
+      }
+      else if (el.tagName === 'DIV') walk(el);
+    }
+  })(flow);
+  return out;
+}
+function buildDocx(){
+  const enc = new TextEncoder();
+  const multi = (lastPageCount || 1) > 1;
+  const footerText = [S.executor, cfg.phone].filter(Boolean).join(' ');
+  const W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
+  const ftr = t => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:ftr ${W}><w:p><w:pPr><w:jc w:val="both"/></w:pPr>${t ? `<w:r><w:rPr><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">${xe(t)}</w:t></w:r>` : ''}</w:p></w:ftr>`;
+  const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${W} xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>${docBodyXml()}<w:sectPr><w:footerReference w:type="default" r:id="rIdF1"/>${multi ? '<w:footerReference w:type="first" r:id="rIdF2"/>' : ''}<w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="284" w:right="716" w:bottom="827" w:left="1700" w:header="720" w:footer="680" w:gutter="0"/>${multi ? '<w:titlePg/>' : ''}</w:sectPr></w:body></w:document>`;
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ${W}><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="Times New Roman" w:cs="Times New Roman"/><w:sz w:val="28"/><w:szCs w:val="28"/><w:lang w:val="uk-UA"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>`;
+  const ct = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/><Override PartName="/word/footer2.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/></Types>`;
+  const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
+  const drels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdSt" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rIdImg" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image1.png"/><Relationship Id="rIdF1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/><Relationship Id="rIdF2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer2.xml"/></Relationships>`;
+  const img = Uint8Array.from(atob(LOGO.split(',')[1]), c => c.charCodeAt(0));
+  return zipStore([
+    {name:'[Content_Types].xml', data:enc.encode(ct)},
+    {name:'_rels/.rels', data:enc.encode(rels)},
+    {name:'word/document.xml', data:enc.encode(doc)},
+    {name:'word/styles.xml', data:enc.encode(styles)},
+    {name:'word/_rels/document.xml.rels', data:enc.encode(drels)},
+    {name:'word/footer1.xml', data:enc.encode(ftr(footerText))},
+    {name:'word/footer2.xml', data:enc.encode(ftr(''))},
+    {name:'word/media/image1.png', data:img}
+  ]);
+}
+function docName(){ return `${S.inNum || 'СЦ'} ${[S.surname, S.name].filter(Boolean).join(' ')}`.trim(); }
+function checkBeforeOutput(verb){
+  if (!S.type){ alert('Спочатку оберіть варіант відповіді.'); return false; }
+  const empties = $('#page').querySelectorAll('.v.empty').length;
+  if (empties && !confirm(`У листі ${empties} незаповнен${empties===1?'е місце':'их місць'} (позначено червоним). ${verb} все одно?`)) return false;
+  if (S.type==='refusal') rememberSubject();
+  return true;
+}
+function downloadBlob(blob, name){
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+function toast(html, cls){
+  const t = $('#toast'); t.innerHTML = html; t.className = 'toast show ' + (cls||'');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.className = 'toast', cls === 'err' ? 12000 : 9000);
+}
+async function blobToB64(blob){
+  const buf = new Uint8Array(await blob.arrayBuffer()); let s = '';
+  for (let i = 0; i < buf.length; i += 0x8000) s += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+$('#docxBtn').addEventListener('click', () => {
+  if (!checkBeforeOutput('Зберегти')) return;
+  downloadBlob(buildDocx(), docName().replace(/[\\/:*?"<>|]/g, '_') + '.docx');
+});
+/* ---- Google Диск: вхід у обліковий запис Google, відкритий у браузері ---- */
+let driveToken = null, driveTokenExp = 0, driveFolderId = null, gisLoading = null;
+function loadGis(){
+  if (window.google && google.accounts && google.accounts.oauth2) return Promise.resolve();
+  if (!gisLoading) gisLoading = new Promise((res, rej) => {
+    const sc = document.createElement('script'); sc.src = 'https://accounts.google.com/gsi/client'; sc.async = true;
+    sc.onload = res; sc.onerror = () => { gisLoading = null; rej(new Error('немає зв’язку з Google')); };
+    document.head.appendChild(sc);
+  });
+  return gisLoading;
+}
+function getDriveToken(){
+  if (driveToken && Date.now() < driveTokenExp - 60000) return Promise.resolve(driveToken);
+  return loadGis().then(() => new Promise((res, rej) => {
+    const tc = google.accounts.oauth2.initTokenClient({
+      client_id: cfg.googleClientId,
+      scope: 'https://www.googleapis.com/auth/drive.file',
+      callback: r => {
+        if (r.error) return rej(new Error(r.error_description || r.error));
+        driveToken = r.access_token; driveTokenExp = Date.now() + (r.expires_in || 3600) * 1000; res(driveToken);
+      },
+      error_callback: e => rej(new Error(e.type === 'popup_closed' ? 'вікно входу закрито' : e.type === 'popup_failed_to_open' ? 'браузер заблокував вікно входу — дозвольте спливаючі вікна для сайту' : (e.message || e.type)))
+    });
+    tc.requestAccessToken({ prompt: '' });
+  }));
+}
+async function gapi(url, opt = {}){
+  const r = await fetch(url, Object.assign({}, opt, { headers: Object.assign({ Authorization: 'Bearer ' + driveToken }, opt.headers || {}) }));
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok){ if (r.status === 401) driveToken = null; throw new Error((j.error && j.error.message) || ('HTTP ' + r.status)); }
+  return j;
+}
+async function ensureFolder(){
+  if (driveFolderId) return driveFolderId;
+  const name = cfg.driveFolder || DEFAULTS.driveFolder;
+  const q = encodeURIComponent(`name='${name.replace(/'/g, "\\'")}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+  const found = await gapi(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&pageSize=1`);
+  if (found.files && found.files.length) return driveFolderId = found.files[0].id;
+  const made = await gapi('https://www.googleapis.com/drive/v3/files?fields=id', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, mimeType: 'application/vnd.google-apps.folder' })
+  });
+  return driveFolderId = made.id;
+}
+async function uploadDoc(){
+  const folder = await ensureFolder();
+  const meta = { name: docName(), mimeType: 'application/vnd.google-apps.document', parents: [folder] };
+  const bnd = 'sc' + Date.now();
+  const body = new Blob([
+    `--${bnd}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n`,
+    `--${bnd}\r\nContent-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document\r\n\r\n`,
+    buildDocx(), `\r\n--${bnd}--`
+  ]);
+  return gapi('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink', {
+    method: 'POST', headers: { 'Content-Type': 'multipart/related; boundary=' + bnd }, body
+  });
+}
+$('#driveBtn').addEventListener('click', async () => {
+  if (!cfg.googleClientId){
+    toast('Вкажіть Client ID: «Налаштування» → «Google Диск».', 'err');
+    const d = document.querySelector('details.settings'); if (d){ d.open = true; d.scrollIntoView({behavior:'smooth'}); }
+    return;
+  }
+  if (location.protocol === 'file:'){ toast('Збереження на Диск працює лише коли сайт відкрито з сервера (http/https). Поки що збережіть як Word.', 'err'); return; }
+  if (!checkBeforeOutput('Зберегти')) return;
+  const btn = $('#driveBtn'); btn.disabled = true; const old = btn.textContent; btn.textContent = 'Зберігаю…';
+  try{
+    await getDriveToken();
+    let f;
+    try { f = await uploadDoc(); }
+    catch(e){ if (!driveToken){ driveFolderId = null; await getDriveToken(); f = await uploadDoc(); } else throw e; }
+    toast(`✓ Збережено в папку «${esc(cfg.driveFolder)}»: <a href="${esc(f.webViewLink)}" target="_blank" rel="noopener">${esc(docName())}</a>`, 'ok');
+  }catch(e){
+    toast('Не вдалося зберегти на Диск: ' + esc(e.message) + '. Можна зберегти як Word.', 'err');
+  }finally{ btn.disabled = false; btn.textContent = old; }
+});
 
 /* ================= ДРУК ================= */
 $('#printBtn').addEventListener('click', () => {
